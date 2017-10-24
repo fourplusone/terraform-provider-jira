@@ -41,7 +41,7 @@ func resourceIssue() *schema.Resource {
 			},
 
 			// Computed values
-			"issue_id": &schema.Schema{
+			"issue_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -50,18 +50,13 @@ func resourceIssue() *schema.Resource {
 }
 
 func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
+	config := m.(*Config)
 	assignee := d.Get("assignee").(string)
 	reporter := d.Get("reporter").(string)
 	issueType := d.Get("issue_type").(string)
 	description := d.Get("description").(string)
 	summary := d.Get("summary").(string)
 	projectKey := d.Get("project_key").(string)
-
-	jiraClient, err := jira.NewClient(nil, "http://localhost:8080")
-	if err != nil {
-		return errors.Wrap(err, "creating jira client failed")
-	}
-	jiraClient.Authentication.SetBasicAuth("username", "password")
 
 	i := jira.Issue{
 		Fields: &jira.IssueFields{
@@ -81,7 +76,7 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 			Summary: summary,
 		},
 	}
-	issue, _, err := jiraClient.Issue.Create(&i)
+	issue, _, err := config.jiraClient.Issue.Create(&i)
 	if err != nil {
 		return errors.Wrap(err, "creating jira issue failed")
 	}
@@ -92,13 +87,9 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
-	jiraClient, err := jira.NewClient(nil, "http://localhost:8080")
-	if err != nil {
-		return errors.Wrap(err, "creating jira client failed")
-	}
-	jiraClient.Authentication.SetBasicAuth("username", "password")
+	config := m.(*Config)
 
-	issue, _, err := jiraClient.Issue.Get(d.Id(), nil)
+	issue, _, err := config.jiraClient.Issue.Get(d.Id(), nil)
 	if err != nil {
 		return errors.Wrap(err, "getting jira issue failed")
 	}
@@ -111,14 +102,59 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 	}
 	d.Set("summary", issue.Fields.Summary)
 	d.Set("project_key", issue.Fields.Project.Key)
+	d.Set("issue_key", issue.Key)
 
 	return nil
 }
 
 func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
-	return nil
+	config := m.(*Config)
+	assignee := d.Get("assignee").(string)
+	reporter := d.Get("reporter").(string)
+	issueType := d.Get("issue_type").(string)
+	description := d.Get("description").(string)
+	summary := d.Get("summary").(string)
+	projectKey := d.Get("project_key").(string)
+	issueKey := d.Get("issue_key").(string)
+
+	i := jira.Issue{
+		Key: issueKey,
+		ID:  d.Id(),
+		Fields: &jira.IssueFields{
+			Assignee: &jira.User{
+				Name: assignee,
+			},
+			Reporter: &jira.User{
+				Name: reporter,
+			},
+			Description: description,
+			Type: jira.IssueType{
+				Name: issueType,
+			},
+			Project: jira.Project{
+				Key: projectKey,
+			},
+			Summary: summary,
+		},
+	}
+	issue, _, err := config.jiraClient.Issue.Update(&i)
+	if err != nil {
+		return errors.Wrap(err, "updating jira issue failed: %s")
+	}
+
+	d.SetId(issue.ID)
+
+	return resourceIssueRead(d, m)
 }
 
 func resourceIssueDelete(d *schema.ResourceData, m interface{}) error {
+	config := m.(*Config)
+
+	id := d.Id()
+
+	_, err := config.jiraClient.Issue.Delete(id)
+	if err != nil {
+		return errors.Wrap(err, "deleting jira issue failed")
+	}
 	return nil
 }
