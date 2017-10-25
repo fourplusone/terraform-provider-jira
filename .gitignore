@@ -1,3 +1,5 @@
 terraform-provider-jira
 .DS_Store
 output/
+.terraform/
+.terraform.d
