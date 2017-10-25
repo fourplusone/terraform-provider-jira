@@ -2,6 +2,8 @@
 Terraform Provider for creating, updating and deleting JIRA issues.
 This can be used to interlink infrastructure management with JIRA issues closely.
 
+![terraform-provider-jira demo](./images/terraform-provider-jira.gif)
+
 ## Install
 
 * Download `terraform-provider-jira` binary from [Github](https://github.com/anubhavmishra/terraform-provider-jira/releases)
