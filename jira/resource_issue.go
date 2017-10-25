@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// resourceIssue is used to define a JIRA issue
 func resourceIssue() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceIssueCreate,
