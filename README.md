@@ -20,7 +20,7 @@ mv terraform-provider-jira $HOME/.terraform.d/plugins/terraform-provider-jira
 terraform init
 ```
 
-This should initialize the plugin.
+Used to initialize the plugin
 
 ## Example Usage
 
