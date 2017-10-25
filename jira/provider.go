@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Provider returns a terraform.ResourceProvider
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
@@ -14,6 +15,7 @@ func Provider() *schema.Provider {
 	}
 }
 
+// providerConfigure configures the provider by creating and authenticating JIRA client
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	var c Config
 	if err := c.createAndAuthenticateClient(); err != nil {

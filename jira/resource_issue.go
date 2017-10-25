@@ -49,6 +49,7 @@ func resourceIssue() *schema.Resource {
 	}
 }
 
+// resourceIssueCreate creates a new jira issue using the jira api
 func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 	assignee := d.Get("assignee").(string)
@@ -86,6 +87,7 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 	return resourceIssueRead(d, m)
 }
 
+// resourceIssueRead reads issue details using jira api
 func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
@@ -107,6 +109,7 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
+// resourceIssueUpdate updates jira issue using jira api
 func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 	assignee := d.Get("assignee").(string)
@@ -147,6 +150,7 @@ func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 	return resourceIssueRead(d, m)
 }
 
+// resourceIssueDelete deletes jira issue using the jira api
 func resourceIssueDelete(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
