@@ -87,8 +87,8 @@ terraform apply
 ```
 
 ## Rationale
-When we work in Operations engineering organizations we tend to find that infrastructure is something driven by tickets. Why not track infrastructure and then create tickets to track it for audit purposes :)
-This just showcases that you can pretty much use Terraform for anything!
+Working in Operations engineering organizations infrastructure is often driven by tickets. Why not track infrastructure using tickets but this time we will use code.
+This just showcases that you can pretty much Terraform anything!
 
 
 
