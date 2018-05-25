@@ -30,7 +30,7 @@ Set JIRA URL, Username and Password using environment variables
 
 ```bash
 export JIRA_URL=http://localhost:8080
-export JIRA_USERNAME=username
+export JIRA_USER=username
 export JIRA_PASSWORD=password
 ```
 
