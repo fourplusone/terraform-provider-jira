@@ -1,3 +1,6 @@
 language: go
 go:
 - "1.11.1"
+
+script:
+- make build
