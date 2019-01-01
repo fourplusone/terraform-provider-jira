@@ -9,7 +9,10 @@ import (
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
-			"jira_issue": resourceIssue(),
+			"jira_issue":           resourceIssue(),
+			"jira_issue_link":      resourceIssueLink(),
+			"jira_issue_type":      resourceIssueType(),
+			"jira_issue_link_type": resourceIssueLinkType(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
