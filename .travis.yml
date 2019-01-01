@@ -2,5 +2,10 @@ language: go
 go:
 - "1.11.1"
 
+os:
+  - windows
+  - linux
+  - osx
+
 script:
 - make build
