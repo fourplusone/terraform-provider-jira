@@ -1,12 +1,21 @@
 # terraform-provider-jira
-Terraform Provider for creating, updating and deleting JIRA issues.
+
+[![Build Status](https://travis-ci.com/fourplusone/terraform-provider-jira.svg?branch=master)](https://travis-ci.com/fourplusone/terraform-provider-jira)
+
+Terraform Provider for managing JIRA. Supports
+
+- Issues
+- Issue Links
+- Issue Types
+- Issue Link Types
+
 This can be used to interlink infrastructure management with JIRA issues closely.
 
 ![terraform-provider-jira demo](./images/terraform-provider-jira.gif)
 
 ## Install
 
-* Download `terraform-provider-jira` binary from [Github](https://github.com/anubhavmishra/terraform-provider-jira/releases)
+* Download `terraform-provider-jira` binary from [Github](https://github.com/fourplusone/terraform-provider-jira/releases)
 * Unzip the zip file
 * Then move `terraform-provider-jira` binary to `$HOME/.terraform.d/plugins` directory
 
@@ -37,17 +46,40 @@ export JIRA_PASSWORD=password
 Create terraform config file
 
 ```hcl
-resource "jira_issue" "example" {
-  assignee    = "anubhavmishra"
-  reporter    = "anubhavmishra"
+// The types will be globally available in JIRA
+resource "jira_issue_type" "task" {
+  description = "A Task.",
+  name = "Task",
+  avatar_id = 10318
+}
 
-  issue_type  = "Task"
+resource "jira_issue_link_type" "blocks" {
+  name = "Blocks"
+  inward = "is blocked by"
+  outward = "blocks"
+}
+
+resource "jira_issue" "example" {
+  issue_type  = "${jira_issue_type.task.name}"
+  summary     = "Created using Terraform"
 
   // description is optional  
   description = "This is a test issue"
-  summary     = "Created using Terraform"
+  
 
   project_key = "PROJ"
+}
+
+resource "jira_issue" "another_example" {
+  issue_type  = "${jira_issue_type.task.name}"
+  summary     = "Also Created using Terraform"
+  project_key = "PROJ"
+}
+
+resource "jira_issue_link" "linked" {
+  inward_key = "${jira_issue.example.issue_key}"
+  outward_key = "${jira_issue.another_example.issue_key}"
+  link_type = "${jira_issue_link_type.blocks.id}"
 }
 ```
 
@@ -89,6 +121,3 @@ terraform apply
 ## Rationale
 Working in Operations engineering organizations infrastructure is often driven by tickets. Why not track infrastructure using tickets but this time we will use code.
 This just showcases that you can pretty much Terraform anything!
-
-
-
