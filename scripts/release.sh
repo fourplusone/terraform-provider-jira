@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # define architecture we want to build
-XC_ARCH=${XC_ARCH:-"386 amd64 arm"}
-XC_OS=${XC_OS:-linux darwin}
-XC_EXCLUDE_OSARCH="!darwin/arm !darwin/386"
+XC_ARCH=${XC_ARCH:-"386 amd64"}
+XC_OS=${XC_OS:-linux darwin windows}
+XC_EXCLUDE_OSARCH="!darwin/386"
 
 # clean up
 echo "-> running clean up...."
