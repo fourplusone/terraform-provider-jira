@@ -1,10 +1,17 @@
 package jira
 
 import (
+	"os"
+	"strings"
+
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/pkg/errors"
 )
+
+func caseInsensitiveSuppressFunc(k, old, new string, d *schema.ResourceData) bool {
+	return strings.ToLower(old) == strings.ToLower(new)
+}
 
 // resourceIssue is used to define a JIRA issue
 func resourceIssue() *schema.Resource {
@@ -16,12 +23,21 @@ func resourceIssue() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"assignee": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
+				Type:             schema.TypeString,
+				Optional:         true,
+				DiffSuppressFunc: caseInsensitiveSuppressFunc,
 			},
 			"reporter": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				DefaultFunc: func() (interface{}, error) {
+					if v := os.Getenv("JIRA_USER"); v != "" {
+						return v, nil
+					}
+
+					return "", nil
+				},
+				DiffSuppressFunc: caseInsensitiveSuppressFunc,
 			},
 			"issue_type": &schema.Schema{
 				Type:     schema.TypeString,
@@ -53,8 +69,8 @@ func resourceIssue() *schema.Resource {
 // resourceIssueCreate creates a new jira issue using the jira api
 func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
-	assignee := d.Get("assignee").(string)
-	reporter := d.Get("reporter").(string)
+	assignee := d.Get("assignee")
+	reporter := d.Get("reporter")
 	issueType := d.Get("issue_type").(string)
 	description := d.Get("description").(string)
 	summary := d.Get("summary").(string)
@@ -62,12 +78,6 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 
 	i := jira.Issue{
 		Fields: &jira.IssueFields{
-			Assignee: &jira.User{
-				Name: assignee,
-			},
-			Reporter: &jira.User{
-				Name: reporter,
-			},
 			Description: description,
 			Type: jira.IssueType{
 				Name: issueType,
@@ -78,6 +88,19 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 			Summary: summary,
 		},
 	}
+
+	if assignee != "" {
+		i.Fields.Assignee = &jira.User{
+			Name: assignee.(string),
+		}
+	}
+
+	if reporter != "" {
+		i.Fields.Reporter = &jira.User{
+			Name: reporter.(string),
+		}
+	}
+
 	issue, _, err := config.jiraClient.Issue.Create(&i)
 	if err != nil {
 		return errors.Wrap(err, "creating jira issue failed")
@@ -97,8 +120,14 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 		return errors.Wrap(err, "getting jira issue failed")
 	}
 
-	d.Set("assignee", issue.Fields.Assignee.Name)
-	d.Set("reporter", issue.Fields.Reporter.Name)
+	if issue.Fields.Assignee != nil {
+		d.Set("assignee", issue.Fields.Assignee.Name)
+	}
+
+	if issue.Fields.Reporter != nil {
+		d.Set("reporter", issue.Fields.Reporter.Name)
+	}
+
 	d.Set("issue_type", issue.Fields.Type.Name)
 	if issue.Fields.Description != "" {
 		d.Set("description", issue.Fields.Description)
