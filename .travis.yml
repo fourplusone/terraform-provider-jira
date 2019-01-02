@@ -3,9 +3,7 @@ go:
 - "1.11.1"
 
 os:
-  - windows
   - linux
-  - osx
 
 script:
-- make build
+- make release
