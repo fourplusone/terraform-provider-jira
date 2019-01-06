@@ -1,4 +1,4 @@
-// Copyright 2015-2016 trivago GmbH
+// Copyright 2015-2018 trivago N.V.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,10 @@
 package tcontainer
 
 import (
-	"github.com/trivago/tgo/ttesting"
 	"testing"
 	"time"
+
+	"github.com/trivago/tgo/ttesting"
 )
 
 func TestMarshalMapBaseTypes(t *testing.T) {
@@ -356,4 +357,87 @@ func TestMarshalMapConvert(t *testing.T) {
 
 	_, err = ConvertToMarshalMap(mapRoot3, nil)
 	expect.NoError(err)
+}
+
+func TestMarshalMapClone(t *testing.T) {
+	expect := ttesting.NewExpect(t)
+	testMap := NewMarshalMap()
+
+	testMap["t1"] = 10
+	testMap["t2"] = uint64(10)
+	testMap["t3"] = "test"
+	testMap["t4"] = []byte("test")
+	testMap["t5"] = []int{1, 2, 3}
+
+	cloneTest1 := testMap.Clone()
+	expect.Equal(testMap, cloneTest1)
+
+	testMap["nested1"] = cloneTest1
+	testMap["nested2"] = map[interface{}]interface{}{
+		1:     "test",
+		"foo": "bar",
+		3.1:   []int{1, 2, 3},
+	}
+	testMap["nested3"] = []MarshalMap{cloneTest1}
+
+	cloneTest2 := testMap.Clone()
+	expect.Equal(testMap, cloneTest2)
+}
+
+func TestMarshalMapDelete(t *testing.T) {
+	expect := ttesting.NewExpect(t)
+
+	nested := NewMarshalMap()
+	nested["t1"] = 1
+	nested["t2"] = 2
+	nested["t3"] = 3
+
+	nested2 := nested.Clone()
+	testMap := NewMarshalMap()
+	testMap["t1"] = 1
+	testMap["map"] = nested
+	testMap["array"] = []MarshalMap{nested2}
+
+	testMap.Delete("t1")
+	expect.MapNotSet(testMap, "t1")
+	_, exists := testMap.Value("t1")
+	expect.False(exists)
+
+	testMap.Delete("map/t2")
+	expect.MapNotSet(nested, "t2")
+	_, exists = testMap.Value("map/t2")
+	expect.False(exists)
+
+	testMap.Delete("array[0]t3")
+	expect.MapNotSet(nested2, "t3")
+	_, exists = testMap.Value("array[0]t3")
+	expect.False(exists)
+}
+
+func TestMarshalMapSet(t *testing.T) {
+	expect := ttesting.NewExpect(t)
+
+	testMap := NewMarshalMap()
+	testMap["t1"] = 1
+	testMap["t2"] = "string"
+
+	testMap.Set("t2", 4)
+	expect.MapEqual(testMap, "t2", 4)
+
+	testMap.Set("t3", testMap.Clone())
+	val, exists := testMap.Value("t3/t1")
+
+	expect.True(exists)
+	expect.Equal(val, 1)
+
+	testMap.Set("t3/t2", "test")
+	val, exists = testMap.Value("t3/t2")
+
+	expect.True(exists)
+	expect.Equal(val, "test")
+
+	testMap.Set("t3/t3", 3)
+	val, exists = testMap.Value("t3/t3")
+	expect.True(exists)
+	expect.Equal(val, 3)
 }
