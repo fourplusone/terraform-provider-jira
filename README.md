@@ -4,6 +4,7 @@
 
 Terraform Provider for managing JIRA. Supports
 
+- Groups
 - Issues
 - Issue Links
 - Issue Types
