@@ -1,9 +1,58 @@
 package jira
 
 import (
+	"fmt"
+	"strconv"
+
+	jira "github.com/andygrunwald/go-jira"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/pkg/errors"
 )
+
+const projectAPIEndpoint = "/rest/api/2/project"
+
+// ProjectRequest The struct sent to the JIRA instance to create a new Project
+type ProjectRequest struct {
+	Key                 string `json:"key,omitempty" structs:"key,omitempty"`
+	Name                string `json:"name,omitempty" structs:"name,omitempty"`
+	ProjectTypeKey      string `json:"projectTypeKey,omitempty" structs:"projectTypeKey,omitempty"`
+	ProjectTemplateKey  string `json:"projectTemplateKey,omitempty" structs:"projectTemplateKey,omitempty"`
+	Description         string `json:"description,omitempty" structs:"description,omitempty"`
+	Lead                string `json:"lead,omitempty" structs:"lead,omitempty"`
+	URL                 string `json:"url,omitempty" structs:"url,omitempty"`
+	AssigneeType        string `json:"assigneeType,omitempty" structs:"assigneeType,omitempty"`
+	AvatarID            int    `json:"avatar_id,omitempty" structs:"avatar_id,omitempty"`
+	IssueSecurityScheme int    `json:"issueSecurityScheme,omitempty" structs:"issueSecurityScheme,omitempty"`
+	PermissionScheme    int    `json:"permissionScheme,omitempty" structs:"permissionScheme,omitempty"`
+	NotificationScheme  int    `json:"notificationScheme,omitempty" structs:"notificationScheme,omitempty"`
+	CategoryID          int    `json:"categoryId,omitempty" structs:"categoryId,omitempty"`
+}
+
+// IDResponse The struct sent from the JIRA instance after creating a new Project
+type IDResponse struct {
+	ID int `json:"id,omitempty" structs:"id,omitempty"`
+}
+
+// GetJiraResourceID Fetches the ID of a JIRA resource
+func GetJiraResourceID(client *jira.Client, urlStr string) (*int, error) {
+	req, err := client.NewRequest("GET", urlStr, nil)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "Creating Request failed")
+	}
+
+	response := new(IDResponse)
+
+	resp, err := client.Do(req, response)
+	if err != nil {
+		if resp.StatusCode == 404 {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "Creating Project Request failed")
+	}
+
+	return &response.ID, nil
+}
 
 func resourceProject() *schema.Resource {
 	return &schema.Resource{
@@ -13,13 +62,58 @@ func resourceProject() *schema.Resource {
 		Delete: resourceProjectDelete,
 
 		Schema: map[string]*schema.Schema{
+			"key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"key": &schema.Schema{
+			"project_type_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+			},
+			"project_template_key": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"lead": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"url": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"assignee_type": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "UNASSIGNED",
+			},
+			"avatar_id": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"issue_security_scheme": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"permission_scheme": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"notification_scheme": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			"category_id": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
 			},
 		},
 	}
@@ -27,14 +121,41 @@ func resourceProject() *schema.Resource {
 
 // resourceProjectCreate creates a new jira issue using the jira api
 func resourceProjectCreate(d *schema.ResourceData, m interface{}) error {
-	// config := m.(*Config)
-	// name := d.Get("name").(string)
-	// key := d.Get("key").(string)
+	config := m.(*Config)
 
-	// config.jiraClient.Project.Get()
-	// d.SetId(issue.ID)
+	project := &ProjectRequest{
+		Key:                 d.Get("key").(string),
+		Name:                d.Get("name").(string),
+		ProjectTypeKey:      d.Get("project_type_key").(string),
+		ProjectTemplateKey:  d.Get("project_template_key").(string),
+		Description:         d.Get("description").(string),
+		Lead:                d.Get("lead").(string),
+		URL:                 d.Get("url").(string),
+		AssigneeType:        d.Get("assignee_type").(string),
+		AvatarID:            d.Get("avatar_id").(int),
+		IssueSecurityScheme: d.Get("issue_security_scheme").(int),
+		PermissionScheme:    d.Get("permission_scheme").(int),
+		NotificationScheme:  d.Get("notification_scheme").(int),
+		CategoryID:          d.Get("category_id").(int),
+	}
+
+	req, err := config.jiraClient.NewRequest("POST", projectAPIEndpoint, project)
+
+	if err != nil {
+		return errors.Wrap(err, "Creating POST Request failed")
+	}
+
+	returnedProject := new(IDResponse)
+
+	_, err = config.jiraClient.Do(req, returnedProject)
+	if err != nil {
+		return errors.Wrap(err, "Creating Project Request failed")
+	}
+
+	d.SetId(strconv.Itoa(returnedProject.ID))
 
 	return resourceProjectRead(d, m)
+
 }
 
 // resourceProjectRead reads issue details using jira api
@@ -46,33 +167,88 @@ func resourceProjectRead(d *schema.ResourceData, m interface{}) error {
 		return errors.Wrap(err, "getting jira project failed")
 	}
 
-	d.Set("name", project.Name)
 	d.Set("key", project.Key)
+	d.Set("name", project.Name)
+	d.Set("description", project.Description)
+	d.Set("lead", project.Lead)
+	d.Set("url", project.URL)
+	d.Set("assignee_type", project.AssigneeType)
+	d.Set("category_id", project.ProjectCategory.ID)
 
-	// issue, _, err := config.jiraClient.Group.
-	// if err != nil {
-	// 	return errors.Wrap(err, "getting jira issue failed")
-	// }
+	issuesecuritylevelscheme, err := GetJiraResourceID(config.jiraClient, fmt.Sprintf("%s/%s/issuesecuritylevelscheme", projectAPIEndpoint, d.Id()))
+	if err != nil {
+		return errors.Wrap(err, "getting issuesecuritylevelscheme failed")
+	}
+	d.Set("issue_security_scheme", issuesecuritylevelscheme)
 
-	// d.Set("assignee", issue.Fields.Assignee.Name)
-	// d.Set("reporter", issue.Fields.Reporter.Name)
-	// d.Set("issue_type", issue.Fields.Type.Name)
-	// if issue.Fields.Description != "" {
-	// 	d.Set("description", issue.Fields.Description)
-	// }
-	// d.Set("summary", issue.Fields.Summary)
-	// d.Set("project_key", issue.Fields.Project.Key)
-	// d.Set("issue_key", issue.Key)
+	notificationscheme, err := GetJiraResourceID(config.jiraClient, fmt.Sprintf("%s/%s/notificationscheme", projectAPIEndpoint, d.Id()))
+	if err != nil {
+		return errors.Wrap(err, "getting notificationscheme failed")
+	}
+	d.Set("notification_scheme", notificationscheme)
+
+	permissionscheme, err := GetJiraResourceID(config.jiraClient, fmt.Sprintf("%s/%s/permissionscheme", projectAPIEndpoint, d.Id()))
+	if err != nil {
+		return errors.Wrap(err, "getting permissionscheme failed")
+	}
+	d.Set("permission_scheme", permissionscheme)
 
 	return nil
 }
 
 // resourceProjectUpdate updates jira issue using jira api
 func resourceProjectUpdate(d *schema.ResourceData, m interface{}) error {
+	config := m.(*Config)
+
+	project := &ProjectRequest{
+		Key:                 d.Get("key").(string),
+		Name:                d.Get("name").(string),
+		ProjectTypeKey:      d.Get("project_type_key").(string),
+		ProjectTemplateKey:  d.Get("project_template_key").(string),
+		Description:         d.Get("description").(string),
+		Lead:                d.Get("lead").(string),
+		URL:                 d.Get("url").(string),
+		AssigneeType:        d.Get("assignee_type").(string),
+		AvatarID:            d.Get("avatar_id").(int),
+		IssueSecurityScheme: d.Get("issue_security_scheme").(int),
+		PermissionScheme:    d.Get("permission_scheme").(int),
+		NotificationScheme:  d.Get("notification_scheme").(int),
+		CategoryID:          d.Get("category_id").(int),
+	}
+	urlStr := fmt.Sprintf("%s/%s", projectAPIEndpoint, d.Id())
+
+	req, err := config.jiraClient.NewRequest("PUT", urlStr, project)
+
+	if err != nil {
+		return errors.Wrap(err, "Creating PUT Request failed")
+	}
+
+	returnedProject := new(jira.Project)
+
+	_, err = config.jiraClient.Do(req, returnedProject)
+	if err != nil {
+		return errors.Wrap(err, "Executing Project Request failed")
+	}
+
 	return resourceProjectRead(d, m)
 }
 
 // resourceProjectDelete deletes jira issue using the jira api
 func resourceProjectDelete(d *schema.ResourceData, m interface{}) error {
+	config := m.(*Config)
+
+	urlStr := fmt.Sprintf("%s/%s", projectAPIEndpoint, d.Id())
+
+	req, err := config.jiraClient.NewRequest("DELETE", urlStr, nil)
+
+	if err != nil {
+		return errors.Wrap(err, "Creating DELETE Request failed")
+	}
+
+	_, err = config.jiraClient.Do(req, nil)
+	if err != nil {
+		return errors.Wrap(err, "Executing Project Request failed")
+	}
+
 	return nil
 }

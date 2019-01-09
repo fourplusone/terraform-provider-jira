@@ -9,6 +9,7 @@ Terraform Provider for managing JIRA. Supports
 - Issue Links
 - Issue Types
 - Issue Link Types
+- Projects
 
 This can be used to interlink infrastructure management with JIRA issues closely.
 
@@ -82,6 +83,17 @@ resource "jira_issue_link" "linked" {
   outward_key = "${jira_issue.another_example.issue_key}"
   link_type = "${jira_issue_link_type.blocks.id}"
 }
+
+resource "jira_project" "project_a" {
+  key = "TRF"
+  name = "Terraform"
+  project_type_key = "business"
+  project_template_key = "com.atlassian.jira-core-project-templates:jira-core-project-management"
+  lead = "bot"
+  permission_scheme = 10400
+  notification_scheme = 10300
+}
+
 ```
 
 Run `terraform init`
