@@ -1,9 +1,16 @@
 language: go
 go:
-- "1.11.1"
-
+- 1.11.1
 os:
-  - linux
-
+- linux
 script:
 - make release
+deploy:
+  provider: releases
+  api_key:
+    secure: jsejahCkjSspLlaEboNIP0DBwplN4iRkzg7BQ+nJ3ODq2oi7JJM+xOPP9LZ6wZ9UR5CVHtZkLVJvecNh2a+u+Pz0W+Ti/cZ87E3L4rwZCe+U9Kh0146o3Ke1VfGVODYdBJuC7ROn0RfuEPv8Nffmv0dJBn1ssHiSwQRL+TXoCJI7vV5KZS7raqtWKKXaIJoD2c3knJz5mlY5cu0bvI5vGA8XAWGTAwVZ3Bxyhq0eINapU4V6bVVpqmaYk6U3suUXGEVUk/DlSHr1svqu0E78powxdQmlGh4Gnz53cD4zR6w6VHsiNNMARAwPICMzwT12m2f6USx3qg5m7FQcgVyi12zZbfzgsNBFoNB5GFDsFc9h59Aewo+4lcLNXj/VpyfeLy9wGeX+P6+tYishnuhW2xEbpU1dkP4rnL2glkKtytbK4vWSlZiIX72BwTQybjLLmM5ZTK4TvED77IChq463rvjd7Eoubw2HAFDzaY6bgds/hSWpMN+Z7Yn7iHSnBCPzcusrRty2bUSILRKymcvxJ9rYKAgHnllAno+QJMj2/wuuOGEIZ4tNrLSlJjgbrSXf+IIF8oQLXp3b8+CrseC6KD5KWq6eaUAFvEf1DixT5FdzoNk64OmpXTydCDgt+5pGcx6gTLd3LU8jTOmIiZmygrEaTksvB0E7qRv8ZNL9pYg=
+  file_glob: true
+  file: terraform-provider-jira*.zip
+  on:
+    tags: true
+    repo: fourplusone/terraform-provider-jira
