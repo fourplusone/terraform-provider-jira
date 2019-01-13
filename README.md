@@ -5,6 +5,7 @@
 Terraform Provider for managing JIRA. Supports
 
 - Groups
+- Group Memberships
 - Issues
 - Issue Links
 - Issue Types
@@ -93,6 +94,21 @@ resource "jira_project" "project_a" {
   permission_scheme = 10400
   notification_scheme = 10300
 }
+
+
+// Create a group named "Terraform Managed"
+resource "jira_group" "tf_group" {
+  name = "Terraform Managed"
+}
+
+// User "bot" will be a Member of "Terraform Managed"
+
+resource "jira_group_membership" "gm_1" {
+  username = "bot"
+  group = "${jira_group.tf_group.name}"
+}
+
+
 
 ```
 
