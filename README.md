@@ -11,6 +11,7 @@ Terraform Provider for managing JIRA. Supports
 - Issue Types
 - Issue Link Types
 - Projects
+- Webhooks
 
 This can be used to interlink infrastructure management with JIRA issues closely.
 
@@ -108,6 +109,14 @@ resource "jira_group_membership" "gm_1" {
   group = "${jira_group.tf_group.name}"
 }
 
+resource "jira_webhook" "demo_hook" {
+  name = "Terraform Hook"
+  url = "https://demohook"
+  jql = "project = PROJ"
+  
+  // See https://developer.atlassian.com/server/jira/platform/webhooks/ for supported events
+  events = ["jira:issue_created"]
+}
 
 
 ```

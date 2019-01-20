@@ -28,9 +28,14 @@ func resourceIssue() *schema.Resource {
 				DiffSuppressFunc: caseInsensitiveSuppressFunc,
 			},
 			"reporter": &schema.Schema{
-				Type:             schema.TypeString,
-				Optional:         true,
-				DiffSuppressFunc: caseInsensitiveSuppressFunc,
+				Type:     schema.TypeString,
+				Optional: true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					if new == "" {
+						return true
+					}
+					return caseInsensitiveSuppressFunc(k, old, new, d)
+				},
 			},
 			"issue_type": &schema.Schema{
 				Type:     schema.TypeString,

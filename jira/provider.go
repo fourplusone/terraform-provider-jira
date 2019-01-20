@@ -16,6 +16,7 @@ func Provider() *schema.Provider {
 			"jira_issue_type":       resourceIssueType(),
 			"jira_issue_link_type":  resourceIssueLinkType(),
 			"jira_project":          resourceProject(),
+			"jira_webhook":          resourceWebhook(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

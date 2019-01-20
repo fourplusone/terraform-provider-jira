@@ -17,6 +17,7 @@ const issueLinkTypeAPIEndpoint = "/rest/api/2/issueLinkType"
 const issueTypeAPIEndpoint = "/rest/api/2/issuetype"
 
 const projectAPIEndpoint = "/rest/api/2/project"
+const webhookAPIEndpoint = "/rest/webhooks/1.0/webhook"
 
 func request(client *jira.Client, method string, endpoint string, in interface{}, out interface{}) error {
 
@@ -28,12 +29,17 @@ func request(client *jira.Client, method string, endpoint string, in interface{}
 
 	res, err := client.Do(req, out)
 	if err != nil {
-		typeName := reflect.TypeOf(in).Name()
-		body, readErr := ioutil.ReadAll(res.Response.Body)
-		if readErr != nil {
-			return errors.Wrapf(readErr, "Creating %s Request failed", typeName)
+
+		if in != nil {
+			typeName := reflect.TypeOf(in).Name()
+			body, readErr := ioutil.ReadAll(res.Response.Body)
+			if readErr != nil {
+				return errors.Wrapf(readErr, "Creating %s Request failed", typeName)
+			}
+			return errors.Wrapf(err, "Creating %s Request failed: %s", typeName, body)
+
 		}
-		return errors.Wrapf(err, "Creating %s Request failed: %s", typeName, body)
+		return errors.Wrapf(err, "Creating Request failed")
 	}
 
 	return nil
