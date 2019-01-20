@@ -8,8 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const issueLinkTypeAPIEndpoint = "/rest/api/2/issueLinkType"
-
 func resourceIssueLinkType() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceIssueLinkTypeCreate,
@@ -47,17 +45,11 @@ func resourceIssueLinkTypeCreate(d *schema.ResourceData, m interface{}) error {
 	issueLinkType.Inward = d.Get("inward").(string)
 	issueLinkType.Outward = d.Get("outward").(string)
 
-	req, err := config.jiraClient.NewRequest("POST", issueLinkTypeAPIEndpoint, issueLinkType)
-
-	if err != nil {
-		return errors.Wrap(err, "Creating POST Request failed")
-	}
-
 	returnedIssueLinkType := new(jira.IssueLinkType)
 
-	_, err = config.jiraClient.Do(req, returnedIssueLinkType)
+	err := request(config.jiraClient, "POST", issueLinkTypeAPIEndpoint, issueLinkType, returnedIssueLinkType)
 	if err != nil {
-		return errors.Wrap(err, "Creating IssueLinkType Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	d.SetId(returnedIssueLinkType.ID)
@@ -68,19 +60,12 @@ func resourceIssueLinkTypeCreate(d *schema.ResourceData, m interface{}) error {
 // resourceIssueLinkTypeRead reads issue details using jira api
 func resourceIssueLinkTypeRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
-
 	urlStr := fmt.Sprintf("%s/%s", issueLinkTypeAPIEndpoint, d.Id())
-	req, err := config.jiraClient.NewRequest("GET", urlStr, nil)
-
-	if err != nil {
-		return errors.Wrap(err, "Creating IssueLinkType Request failed")
-	}
-
 	issueLinkType := new(jira.IssueLinkType)
 
-	_, err = config.jiraClient.Do(req, issueLinkType)
+	err := request(config.jiraClient, "GET", urlStr, nil, issueLinkType)
 	if err != nil {
-		return errors.Wrap(err, "Creating IssueLinkType Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	d.Set("name", issueLinkType.Name)
@@ -101,17 +86,11 @@ func resourceIssueLinkTypeUpdate(d *schema.ResourceData, m interface{}) error {
 	issueLinkType.Outward = d.Get("outward").(string)
 
 	urlStr := fmt.Sprintf("%s/%s", issueLinkTypeAPIEndpoint, d.Id())
-	req, err := config.jiraClient.NewRequest("PUT", urlStr, issueLinkType)
-
-	if err != nil {
-		return errors.Wrap(err, "Creating PUT Request failed")
-	}
-
 	returnedIssueLinkType := new(jira.IssueLinkType)
 
-	_, err = config.jiraClient.Do(req, returnedIssueLinkType)
+	err := request(config.jiraClient, "PUT", urlStr, issueLinkType, returnedIssueLinkType)
 	if err != nil {
-		return errors.Wrap(err, "Creating IssueLinkType Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	return resourceIssueLinkTypeRead(d, m)
@@ -122,15 +101,10 @@ func resourceIssueLinkTypeDelete(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
 	urlStr := fmt.Sprintf("%s/%s", issueLinkTypeAPIEndpoint, d.Id())
-	req, err := config.jiraClient.NewRequest("DELETE", urlStr, nil)
 
+	err := request(config.jiraClient, "DELETE", urlStr, nil, nil)
 	if err != nil {
-		return errors.Wrap(err, "Creating DELETE Request failed")
-	}
-
-	_, err = config.jiraClient.Do(req, nil)
-	if err != nil {
-		return errors.Wrap(err, "Creating IssueLinkType Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	return nil

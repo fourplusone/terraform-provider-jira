@@ -9,8 +9,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const issueLinkAPIEndpoint = "/rest/api/2/issueLink"
-
 func resourceIssueLink() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceIssueLinkCreate,
@@ -75,17 +73,11 @@ func resourceIssueLinkRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
 	urlStr := fmt.Sprintf("%s/%s", issueLinkAPIEndpoint, d.Id())
-	req, err := config.jiraClient.NewRequest("GET", urlStr, nil)
-
-	if err != nil {
-		return errors.Wrap(err, "Creating IssueLink Request failed")
-	}
-
 	issueLink := new(jira.IssueLink)
 
-	_, err = config.jiraClient.Do(req, issueLink)
+	err := request(config.jiraClient, "GET", urlStr, nil, issueLink)
 	if err != nil {
-		return errors.Wrap(err, "Creating IssueLink Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	d.Set("inward_key", issueLink.InwardIssue.Key)
@@ -100,15 +92,10 @@ func resourceIssueLinkDelete(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
 	urlStr := fmt.Sprintf("%s/%s", issueLinkAPIEndpoint, d.Id())
-	req, err := config.jiraClient.NewRequest("DELETE", urlStr, nil)
 
+	err := request(config.jiraClient, "DELETE", urlStr, nil, nil)
 	if err != nil {
-		return errors.Wrap(err, "Creating DELETE Request failed")
-	}
-
-	_, err = config.jiraClient.Do(req, nil)
-	if err != nil {
-		return errors.Wrap(err, "Creating IssueLink Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	return nil

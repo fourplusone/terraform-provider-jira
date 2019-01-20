@@ -8,8 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const issueTypeAPIEndpoint = "/rest/api/2/issuetype"
-
 // IssueTypeRequest The struct sent to the JIRA instance to create a new Issue Type
 // JIRA API docs: https://docs.atlassian.com/software/jira/docs/api/REST/7.6.1/#api/2/issuetype-createIssueType
 type IssueTypeRequest struct {
@@ -66,17 +64,10 @@ func resourceIssueTypeCreate(d *schema.ResourceData, m interface{}) error {
 		issueType.Type = "subtask"
 	}
 
-	req, err := config.jiraClient.NewRequest("POST", issueTypeAPIEndpoint, issueType)
-
-	if err != nil {
-		return errors.Wrap(err, "Creating POST Request failed")
-	}
-
 	returnedIssueType := new(jira.IssueType)
-
-	_, err = config.jiraClient.Do(req, returnedIssueType)
+	err := request(config.jiraClient, "POST", issueTypeAPIEndpoint, issueType, returnedIssueType)
 	if err != nil {
-		return errors.Wrap(err, "Creating IssueType Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	d.SetId(returnedIssueType.ID)
@@ -91,17 +82,12 @@ func resourceIssueTypeRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
 	urlStr := fmt.Sprintf("%s/%s", issueTypeAPIEndpoint, d.Id())
-	req, err := config.jiraClient.NewRequest("GET", urlStr, nil)
-
-	if err != nil {
-		return errors.Wrap(err, "Creating IssueType Request failed")
-	}
 
 	issueType := new(jira.IssueType)
+	err := request(config.jiraClient, "GET", urlStr, nil, issueType)
 
-	_, err = config.jiraClient.Do(req, issueType)
 	if err != nil {
-		return errors.Wrap(err, "Creating IssueType Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	d.Set("name", issueType.Name)
@@ -123,17 +109,12 @@ func resourceIssueTypeUpdate(d *schema.ResourceData, m interface{}) error {
 	issueType.AvatarID = d.Get("avatar_id").(int)
 
 	urlStr := fmt.Sprintf("%s/%s", issueTypeAPIEndpoint, d.Id())
-	req, err := config.jiraClient.NewRequest("PUT", urlStr, issueType)
-
-	if err != nil {
-		return errors.Wrap(err, "Creating PUT Request failed")
-	}
-
 	returnedIssueType := new(jira.IssueType)
 
-	_, err = config.jiraClient.Do(req, returnedIssueType)
+	err := request(config.jiraClient, "PUT", urlStr, issueType, returnedIssueType)
+
 	if err != nil {
-		return errors.Wrap(err, "Creating IssueType Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	return resourceIssueTypeRead(d, m)
@@ -144,15 +125,11 @@ func resourceIssueTypeDelete(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
 	urlStr := fmt.Sprintf("%s/%s", issueTypeAPIEndpoint, d.Id())
-	req, err := config.jiraClient.NewRequest("DELETE", urlStr, nil)
+
+	err := request(config.jiraClient, "DELETE", urlStr, nil, nil)
 
 	if err != nil {
-		return errors.Wrap(err, "Creating DELETE Request failed")
-	}
-
-	_, err = config.jiraClient.Do(req, nil)
-	if err != nil {
-		return errors.Wrap(err, "Creating IssueType Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	return nil

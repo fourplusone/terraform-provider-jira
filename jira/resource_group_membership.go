@@ -10,8 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const groupUserAPIEndpoint = "/rest/api/2/group/user"
-
 // Group The struct sent to the JIRA instance to create a new GroupMembership
 type Group struct {
 	Name string `json:"name,omitempty" structs:"name,omitempty"`
@@ -83,20 +81,14 @@ func resourceGroupMembershipCreate(d *schema.ResourceData, m interface{}) error 
 	groupMembership := new(Group)
 	groupMembership.Name = username
 
-	relativeURL, err := url.Parse(groupUserAPIEndpoint)
+	relativeURL, _ := url.Parse(groupUserAPIEndpoint)
 	query := relativeURL.Query()
 	query.Set("groupname", group)
 	relativeURL.RawQuery = query.Encode()
 
-	req, err := config.jiraClient.NewRequest("POST", relativeURL.String(), groupMembership)
-
+	err := request(config.jiraClient, "POST", relativeURL.String(), groupMembership, nil)
 	if err != nil {
-		return errors.Wrap(err, "Creating POST Request failed")
-	}
-
-	_, err = config.jiraClient.Do(req, nil)
-	if err != nil {
-		return errors.Wrap(err, "Executing POST Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	d.SetId(fmt.Sprintf("%s:%s", username, group))
@@ -133,7 +125,7 @@ func resourceGroupMembershipRead(d *schema.ResourceData, m interface{}) error {
 func resourceGroupMembershipDelete(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
-	relativeURL, err := url.Parse(groupUserAPIEndpoint)
+	relativeURL, _ := url.Parse(groupUserAPIEndpoint)
 
 	query := relativeURL.Query()
 	query.Set("username", d.Get("username").(string))
@@ -141,15 +133,9 @@ func resourceGroupMembershipDelete(d *schema.ResourceData, m interface{}) error 
 
 	relativeURL.RawQuery = query.Encode()
 
-	req, err := config.jiraClient.NewRequest("DELETE", relativeURL.String(), nil)
-
+	err := request(config.jiraClient, "DELETE", relativeURL.String(), nil, nil)
 	if err != nil {
-		return errors.Wrap(err, "Creating DELETE Request failed")
-	}
-
-	_, err = config.jiraClient.Do(req, nil)
-	if err != nil {
-		return errors.Wrap(err, "Executing DELETE Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	return nil

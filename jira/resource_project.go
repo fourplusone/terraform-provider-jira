@@ -9,8 +9,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const projectAPIEndpoint = "/rest/api/2/project"
-
 // ProjectRequest The struct sent to the JIRA instance to create a new Project
 type ProjectRequest struct {
 	Key                 string `json:"key,omitempty" structs:"key,omitempty"`
@@ -139,17 +137,11 @@ func resourceProjectCreate(d *schema.ResourceData, m interface{}) error {
 		CategoryID:          d.Get("category_id").(int),
 	}
 
-	req, err := config.jiraClient.NewRequest("POST", projectAPIEndpoint, project)
-
-	if err != nil {
-		return errors.Wrap(err, "Creating POST Request failed")
-	}
-
 	returnedProject := new(IDResponse)
 
-	_, err = config.jiraClient.Do(req, returnedProject)
+	err := request(config.jiraClient, "POST", projectAPIEndpoint, project, returnedProject)
 	if err != nil {
-		return errors.Wrap(err, "Creating Project Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	d.SetId(strconv.Itoa(returnedProject.ID))
@@ -217,17 +209,11 @@ func resourceProjectUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 	urlStr := fmt.Sprintf("%s/%s", projectAPIEndpoint, d.Id())
 
-	req, err := config.jiraClient.NewRequest("PUT", urlStr, project)
-
-	if err != nil {
-		return errors.Wrap(err, "Creating PUT Request failed")
-	}
-
 	returnedProject := new(jira.Project)
 
-	_, err = config.jiraClient.Do(req, returnedProject)
+	err := request(config.jiraClient, "PUT", urlStr, project, returnedProject)
 	if err != nil {
-		return errors.Wrap(err, "Executing Project Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	return resourceProjectRead(d, m)
@@ -239,15 +225,9 @@ func resourceProjectDelete(d *schema.ResourceData, m interface{}) error {
 
 	urlStr := fmt.Sprintf("%s/%s", projectAPIEndpoint, d.Id())
 
-	req, err := config.jiraClient.NewRequest("DELETE", urlStr, nil)
-
+	err := request(config.jiraClient, "DELETE", urlStr, nil, nil)
 	if err != nil {
-		return errors.Wrap(err, "Creating DELETE Request failed")
-	}
-
-	_, err = config.jiraClient.Do(req, nil)
-	if err != nil {
-		return errors.Wrap(err, "Executing Project Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	return nil

@@ -1,7 +1,7 @@
 package jira
 
 import (
-	"os"
+	"io/ioutil"
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -28,15 +28,8 @@ func resourceIssue() *schema.Resource {
 				DiffSuppressFunc: caseInsensitiveSuppressFunc,
 			},
 			"reporter": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				DefaultFunc: func() (interface{}, error) {
-					if v := os.Getenv("JIRA_USER"); v != "" {
-						return v, nil
-					}
-
-					return "", nil
-				},
+				Type:             schema.TypeString,
+				Optional:         true,
 				DiffSuppressFunc: caseInsensitiveSuppressFunc,
 			},
 			"issue_type": &schema.Schema{
@@ -101,9 +94,10 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	issue, _, err := config.jiraClient.Issue.Create(&i)
+	issue, res, err := config.jiraClient.Issue.Create(&i)
 	if err != nil {
-		return errors.Wrap(err, "creating jira issue failed")
+		body, _ := ioutil.ReadAll(res.Body)
+		return errors.Wrapf(err, "creating jira issue failed: %s", body)
 	}
 
 	d.SetId(issue.ID)
@@ -115,9 +109,10 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
-	issue, _, err := config.jiraClient.Issue.Get(d.Id(), nil)
+	issue, res, err := config.jiraClient.Issue.Get(d.Id(), nil)
 	if err != nil {
-		return errors.Wrap(err, "getting jira issue failed")
+		body, _ := ioutil.ReadAll(res.Body)
+		return errors.Wrapf(err, "getting jira issue failed: %s", body)
 	}
 
 	if issue.Fields.Assignee != nil {
@@ -170,9 +165,10 @@ func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 			Summary: summary,
 		},
 	}
-	issue, _, err := config.jiraClient.Issue.Update(&i)
+	issue, res, err := config.jiraClient.Issue.Update(&i)
 	if err != nil {
-		return errors.Wrap(err, "updating jira issue failed: %s")
+		body, _ := ioutil.ReadAll(res.Body)
+		return errors.Wrapf(err, "updating jira issue failed: %s", body)
 	}
 
 	d.SetId(issue.ID)
@@ -186,9 +182,10 @@ func resourceIssueDelete(d *schema.ResourceData, m interface{}) error {
 
 	id := d.Id()
 
-	_, err := config.jiraClient.Issue.Delete(id)
+	res, err := config.jiraClient.Issue.Delete(id)
 	if err != nil {
-		return errors.Wrap(err, "deleting jira issue failed")
+		body, _ := ioutil.ReadAll(res.Body)
+		return errors.Wrapf(err, "deleting jira issue failed: %s", body)
 	}
 	return nil
 }

@@ -7,8 +7,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const groupAPIEndpoint = "/rest/api/2/group"
-
 // GroupRequest The struct sent to the JIRA instance to create a new Group
 type GroupRequest struct {
 	Name string `json:"name,omitempty" structs:"name,omitempty"`
@@ -38,15 +36,9 @@ func resourceGroupCreate(d *schema.ResourceData, m interface{}) error {
 	group := new(GroupRequest)
 	group.Name = d.Get("name").(string)
 
-	req, err := config.jiraClient.NewRequest("POST", groupAPIEndpoint, group)
-
+	err := request(config.jiraClient, "POST", groupAPIEndpoint, group, nil)
 	if err != nil {
-		return errors.Wrap(err, "Creating POST Request failed")
-	}
-
-	_, err = config.jiraClient.Do(req, nil)
-	if err != nil {
-		return errors.Wrap(err, "Executing POST Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	d.SetId(group.Name)
@@ -72,22 +64,16 @@ func resourceGroupRead(d *schema.ResourceData, m interface{}) error {
 func resourceGroupDelete(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
-	relativeURL, err := url.Parse(groupAPIEndpoint)
+	relativeURL, _ := url.Parse(groupAPIEndpoint)
 
 	query := relativeURL.Query()
 	query.Set("groupname", d.Get("name").(string))
 
 	relativeURL.RawQuery = query.Encode()
 
-	req, err := config.jiraClient.NewRequest("DELETE", relativeURL.String(), nil)
-
+	err := request(config.jiraClient, "DELETE", relativeURL.String(), nil, nil)
 	if err != nil {
-		return errors.Wrap(err, "Creating DELETE Request failed")
-	}
-
-	_, err = config.jiraClient.Do(req, nil)
-	if err != nil {
-		return errors.Wrap(err, "Executing DELETE Request failed")
+		return errors.Wrap(err, "Request failed")
 	}
 
 	return nil
