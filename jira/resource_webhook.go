@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Webhook Filter represents the JQL Filter for Webhook Events
+// WebhookFilter represents the JQL Filter for Webhook Events
 type WebhookFilter struct {
 	JQL string `json:"issue-related-events-section,omitempty"`
 }
