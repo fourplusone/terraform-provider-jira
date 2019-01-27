@@ -9,6 +9,7 @@ import (
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
+			"jira_comment":          resourceComment(),
 			"jira_group":            resourceGroup(),
 			"jira_group_membership": resourceGroupMembership(),
 			"jira_issue":            resourceIssue(),

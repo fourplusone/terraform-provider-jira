@@ -4,6 +4,7 @@
 
 Terraform Provider for managing JIRA. Supports
 
+- Comments
 - Groups
 - Group Memberships
 - Issues
@@ -65,13 +66,16 @@ resource "jira_issue_link_type" "blocks" {
 
 resource "jira_issue" "example" {
   issue_type  = "${jira_issue_type.task.name}"
+  project_key = "PROJ"
   summary     = "Created using Terraform"
 
   // description is optional  
-  description = "This is a test issue"
-  
+  description = "This is a test issue"  
+}
 
-  project_key = "PROJ"
+resource "jira_comment" "example_comment" {
+  body = "Commented using terraform"
+  issue_key = "${jira_issue.example.issue_key}"
 }
 
 resource "jira_issue" "another_example" {
