@@ -285,7 +285,7 @@
   revision = "fa9f258a92500514cc8e9c67020487709df92432"
 
 [[projects]]
-  digest = "1:d2ca18c95fd03f7937a8fec9b3fe15f6763b833cc653f8f1113a2a01d2d7a528"
+  digest = "1:688cb240e2fa4eb81cbf93471eef796868d580218f7ac48383321451630de281"
   name = "github.com/hashicorp/terraform"
   packages = [
     "config",
@@ -297,16 +297,23 @@
     "helper/hashcode",
     "helper/hilmapstructure",
     "helper/schema",
+    "httpclient",
     "moduledeps",
     "plugin",
     "plugin/discovery",
+    "registry",
+    "registry/regsrc",
+    "registry/response",
+    "svchost",
+    "svchost/auth",
+    "svchost/disco",
     "terraform",
     "tfdiags",
     "version",
   ]
   pruneopts = ""
-  revision = "e0fd3ddd704b230897723a7ca251f36b71c2b67a"
-  version = "v0.10.8"
+  revision = "ac4fff416318bf0915a0ab80e062a99ef3724334"
+  version = "v0.11.11"
 
 [[projects]]
   branch = "master"
@@ -431,14 +438,6 @@
   pruneopts = ""
   revision = "3ef9b31a6a0613ae832e7ecf208374027c3b2343"
   version = "v1.2.1"
-
-[[projects]]
-  digest = "1:7f569d906bdd20d906b606415b7d794f798f91a62fcfb6a4daa6d50690fb7a3f"
-  name = "github.com/satori/go.uuid"
-  packages = ["."]
-  pruneopts = ""
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
 
 [[projects]]
   digest = "1:471709b37294bd0697943616565540c7f790a3399edbb4f016fc6808d42e4c52"

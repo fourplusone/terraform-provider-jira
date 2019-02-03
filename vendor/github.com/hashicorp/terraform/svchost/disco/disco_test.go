@@ -45,9 +45,16 @@ func TestDiscover(t *testing.T) {
 			t.Fatalf("test server hostname is invalid: %s", err)
 		}
 
-		d := NewDisco()
-		discovered := d.Discover(host)
-		gotURL := discovered.ServiceURL("thingy.v1")
+		d := New()
+		discovered, err := d.Discover(host)
+		if err != nil {
+			t.Fatalf("unexpected discovery error: %s", err)
+		}
+
+		gotURL, err := discovered.ServiceURL("thingy.v1")
+		if err != nil {
+			t.Fatalf("unexpected service URL error: %s", err)
+		}
 		if gotURL == nil {
 			t.Fatalf("found no URL for thingy.v1")
 		}
@@ -80,9 +87,16 @@ func TestDiscover(t *testing.T) {
 			t.Fatalf("test server hostname is invalid: %s", err)
 		}
 
-		d := NewDisco()
-		discovered := d.Discover(host)
-		gotURL := discovered.ServiceURL("wotsit.v2")
+		d := New()
+		discovered, err := d.Discover(host)
+		if err != nil {
+			t.Fatalf("unexpected discovery error: %s", err)
+		}
+
+		gotURL, err := discovered.ServiceURL("wotsit.v2")
+		if err != nil {
+			t.Fatalf("unexpected service URL error: %s", err)
+		}
 		if gotURL == nil {
 			t.Fatalf("found no URL for wotsit.v2")
 		}
@@ -107,7 +121,7 @@ func TestDiscover(t *testing.T) {
 			t.Fatalf("test server hostname is invalid: %s", err)
 		}
 
-		d := NewDisco()
+		d := New()
 		d.SetCredentialsSource(auth.StaticCredentialsSource(map[svchost.Hostname]map[string]interface{}{
 			host: map[string]interface{}{
 				"token": "abc123",
@@ -116,6 +130,50 @@ func TestDiscover(t *testing.T) {
 		d.Discover(host)
 		if got, want := authHeaderText, "Bearer abc123"; got != want {
 			t.Fatalf("wrong Authorization header\ngot:  %s\nwant: %s", got, want)
+		}
+	})
+	t.Run("forced services override", func(t *testing.T) {
+		forced := map[string]interface{}{
+			"thingy.v1": "http://example.net/foo",
+			"wotsit.v2": "/foo",
+		}
+
+		d := New()
+		d.ForceHostServices(svchost.Hostname("example.com"), forced)
+
+		givenHost := "example.com"
+		host, err := svchost.ForComparison(givenHost)
+		if err != nil {
+			t.Fatalf("test server hostname is invalid: %s", err)
+		}
+
+		discovered, err := d.Discover(host)
+		if err != nil {
+			t.Fatalf("unexpected discovery error: %s", err)
+		}
+		{
+			gotURL, err := discovered.ServiceURL("thingy.v1")
+			if err != nil {
+				t.Fatalf("unexpected service URL error: %s", err)
+			}
+			if gotURL == nil {
+				t.Fatalf("found no URL for thingy.v1")
+			}
+			if got, want := gotURL.String(), "http://example.net/foo"; got != want {
+				t.Fatalf("wrong result %q; want %q", got, want)
+			}
+		}
+		{
+			gotURL, err := discovered.ServiceURL("wotsit.v2")
+			if err != nil {
+				t.Fatalf("unexpected service URL error: %s", err)
+			}
+			if gotURL == nil {
+				t.Fatalf("found no URL for wotsit.v2")
+			}
+			if got, want := gotURL.String(), "https://example.com/foo"; got != want {
+				t.Fatalf("wrong result %q; want %q", got, want)
+			}
 		}
 	})
 	t.Run("not JSON", func(t *testing.T) {
@@ -132,13 +190,15 @@ func TestDiscover(t *testing.T) {
 			t.Fatalf("test server hostname is invalid: %s", err)
 		}
 
-		d := NewDisco()
-		discovered := d.Discover(host)
+		d := New()
+		discovered, err := d.Discover(host)
+		if err == nil {
+			t.Fatalf("expected a discovery error")
+		}
 
-		// result should be empty, which we can verify only by reaching into
-		// its internals.
-		if discovered.services != nil {
-			t.Errorf("response not empty; should be")
+		// Returned discovered should be nil.
+		if discovered != nil {
+			t.Errorf("discovered not nil; should be")
 		}
 	})
 	t.Run("malformed JSON", func(t *testing.T) {
@@ -155,13 +215,15 @@ func TestDiscover(t *testing.T) {
 			t.Fatalf("test server hostname is invalid: %s", err)
 		}
 
-		d := NewDisco()
-		discovered := d.Discover(host)
+		d := New()
+		discovered, err := d.Discover(host)
+		if err == nil {
+			t.Fatalf("expected a discovery error")
+		}
 
-		// result should be empty, which we can verify only by reaching into
-		// its internals.
-		if discovered.services != nil {
-			t.Errorf("response not empty; should be")
+		// Returned discovered should be nil.
+		if discovered != nil {
+			t.Errorf("discovered not nil; should be")
 		}
 	})
 	t.Run("JSON with redundant charset", func(t *testing.T) {
@@ -182,8 +244,11 @@ func TestDiscover(t *testing.T) {
 			t.Fatalf("test server hostname is invalid: %s", err)
 		}
 
-		d := NewDisco()
-		discovered := d.Discover(host)
+		d := New()
+		discovered, err := d.Discover(host)
+		if err != nil {
+			t.Fatalf("unexpected discovery error: %s", err)
+		}
 
 		if discovered.services == nil {
 			t.Errorf("response is empty; shouldn't be")
@@ -201,13 +266,15 @@ func TestDiscover(t *testing.T) {
 			t.Fatalf("test server hostname is invalid: %s", err)
 		}
 
-		d := NewDisco()
-		discovered := d.Discover(host)
+		d := New()
+		discovered, err := d.Discover(host)
+		if err != nil {
+			t.Fatalf("unexpected discovery error: %s", err)
+		}
 
-		// result should be empty, which we can verify only by reaching into
-		// its internals.
+		// Returned discovered.services should be nil (empty).
 		if discovered.services != nil {
-			t.Errorf("response not empty; should be")
+			t.Errorf("discovered.services not nil (empty); should be")
 		}
 	})
 	t.Run("redirect", func(t *testing.T) {
@@ -232,10 +299,16 @@ func TestDiscover(t *testing.T) {
 			t.Fatalf("test server hostname is invalid: %s", err)
 		}
 
-		d := NewDisco()
-		discovered := d.Discover(host)
+		d := New()
+		discovered, err := d.Discover(host)
+		if err != nil {
+			t.Fatalf("unexpected discovery error: %s", err)
+		}
 
-		gotURL := discovered.ServiceURL("thingy.v1")
+		gotURL, err := discovered.ServiceURL("thingy.v1")
+		if err != nil {
+			t.Fatalf("unexpected service URL error: %s", err)
+		}
 		if gotURL == nil {
 			t.Fatalf("found no URL for thingy.v1")
 		}
@@ -280,5 +353,5 @@ func testServer(h func(w http.ResponseWriter, r *http.Request)) (portStr string,
 		server.Close()
 	}
 
-	return
+	return portStr, close
 }

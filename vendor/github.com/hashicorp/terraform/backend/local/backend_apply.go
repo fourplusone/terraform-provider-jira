@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform/backend"
-	"github.com/hashicorp/terraform/command/clistate"
 	"github.com/hashicorp/terraform/command/format"
 	"github.com/hashicorp/terraform/config/module"
 	"github.com/hashicorp/terraform/state"
@@ -19,7 +18,8 @@ import (
 )
 
 func (b *Local) opApply(
-	ctx context.Context,
+	stopCtx context.Context,
+	cancelCtx context.Context,
 	op *backend.Operation,
 	runningOp *backend.RunningOperation) {
 	log.Printf("[INFO] backend/local: starting Apply operation")
@@ -54,25 +54,6 @@ func (b *Local) opApply(
 		return
 	}
 
-	if op.LockState {
-		lockCtx, cancel := context.WithTimeout(ctx, op.StateLockTimeout)
-		defer cancel()
-
-		lockInfo := state.NewLockInfo()
-		lockInfo.Operation = op.Type.String()
-		lockID, err := clistate.Lock(lockCtx, opState, lockInfo, b.CLI, b.Colorize())
-		if err != nil {
-			runningOp.Err = errwrap.Wrapf("Error locking state: {{err}}", err)
-			return
-		}
-
-		defer func() {
-			if err := clistate.Unlock(opState, lockID, b.CLI, b.Colorize()); err != nil {
-				runningOp.Err = multierror.Append(runningOp.Err, err)
-			}
-		}()
-	}
-
 	// Setup the state
 	runningOp.State = tfCtx.State()
 
@@ -99,18 +80,25 @@ func (b *Local) opApply(
 		dispPlan := format.NewPlan(plan)
 		trivialPlan := dispPlan.Empty()
 		hasUI := op.UIOut != nil && op.UIIn != nil
-		mustConfirm := hasUI && ((op.Destroy && !op.DestroyForce) || (!op.Destroy && !op.AutoApprove && !trivialPlan))
+		mustConfirm := hasUI && ((op.Destroy && (!op.DestroyForce && !op.AutoApprove)) || (!op.Destroy && !op.AutoApprove && !trivialPlan))
 		if mustConfirm {
 			var desc, query string
 			if op.Destroy {
-				// Default destroy message
+				if op.Workspace != "default" {
+					query = "Do you really want to destroy all resources in workspace \"" + op.Workspace + "\"?"
+				} else {
+					query = "Do you really want to destroy all resources?"
+				}
 				desc = "Terraform will destroy all your managed infrastructure, as shown above.\n" +
 					"There is no undo. Only 'yes' will be accepted to confirm."
-				query = "Do you really want to destroy?"
 			} else {
+				if op.Workspace != "default" {
+					query = "Do you want to perform these actions in workspace \"" + op.Workspace + "\"?"
+				} else {
+					query = "Do you want to perform these actions?"
+				}
 				desc = "Terraform will perform the actions described above.\n" +
 					"Only 'yes' will be accepted to approve."
-				query = "Do you want to perform these actions?"
 			}
 
 			if !trivialPlan {
@@ -151,42 +139,10 @@ func (b *Local) opApply(
 		_, applyErr = tfCtx.Apply()
 		// we always want the state, even if apply failed
 		applyState = tfCtx.State()
-
-		/*
-			// Record any shadow errors for later
-			if err := ctx.ShadowError(); err != nil {
-				shadowErr = multierror.Append(shadowErr, multierror.Prefix(
-					err, "apply operation:"))
-			}
-		*/
 	}()
 
-	// Wait for the apply to finish or for us to be interrupted so
-	// we can handle it properly.
-	err = nil
-	select {
-	case <-ctx.Done():
-		if b.CLI != nil {
-			b.CLI.Output("stopping apply operation...")
-		}
-
-		// try to force a PersistState just in case the process is terminated
-		// before we can complete.
-		if err := opState.PersistState(); err != nil {
-			// We can't error out from here, but warn the user if there was an error.
-			// If this isn't transient, we will catch it again below, and
-			// attempt to save the state another way.
-			if b.CLI != nil {
-				b.CLI.Error(fmt.Sprintf(earlyStateWriteErrorFmt, err))
-			}
-		}
-
-		// Stop execution
-		go tfCtx.Stop()
-
-		// Wait for completion still
-		<-doneCh
-	case <-doneCh:
+	if b.opWait(doneCh, stopCtx, cancelCtx, tfCtx, opState) {
+		return
 	}
 
 	// Store the final state
@@ -285,8 +241,8 @@ No configuration files found!
 
 Apply requires configuration to be present. Applying without a configuration
 would mark everything for destruction, which is normally not what is desired.
-If you would like to destroy everything, please run 'terraform destroy' instead
-which does not require any configuration files.
+If you would like to destroy everything, please run 'terraform destroy' which
+does not require any configuration files.
 `
 
 const stateWriteBackedUpError = `Failed to persist state to backend.
@@ -329,7 +285,7 @@ This is a serious bug in Terraform and should be reported.
 
 const earlyStateWriteErrorFmt = `Error saving current state: %s
 
-Terraform encountered an error attempting to save the state before canceling
+Terraform encountered an error attempting to save the state before cancelling
 the current operation. Once the operation is complete another attempt will be
 made to save the final state.
 `

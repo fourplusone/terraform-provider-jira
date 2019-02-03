@@ -8,13 +8,324 @@ description: |-
 
 # HTTP API
 
-The [Terraform Registry](https://registry.terraform.io) has an HTTP API for
-reading and downloading registry modules.
+When downloading modules from registry sources such as the public
+[Terraform Registry](https://registry.terraform.io), Terraform expects
+the given hostname to support the following module registry protocol.
 
-Terraform interacts with the registry as read-only. Therefore, the documented
-API is read-only. Any endpoints that aren't documented on this page can and will
-likely change over time. This allows differing methods for getting modules into
-the registry while keeping a consistent API for reading modules in the registry.
+A registry module source is of the form `hostname/namespace/name/provider`,
+where the initial hostname portion is implied to be `registry.terraform.io/`
+if not specified. The public Terraform Registry is therefore the default
+module source.
+
+[Terraform Registry](https://registry.terraform.io) implements a superset
+of this API to allow for importing new modules, etc, but any endpoints not
+documented on this page are subject to change over time.
+
+## Service Discovery
+
+The hostname portion of a module source string is first passed to
+[the service discovery protocol](/docs/internals/remote-service-discovery.html)
+to determine if the given host has a module registry and, if so, the base
+URL for its module registry endpoints.
+
+The service identifier for this protocol is `modules.v1`, and the declared
+URL should always end with a slash such that the paths shown in the following
+sections can be appended to it.
+
+For example, if discovery produces the URL `https://modules.example.com/v1/`
+then this API would use full endpoint URLs like
+`https://modules.example.com/v1/{namespace}/{name}/{provider}/versions`.
+
+## Base URL
+
+The example request URLs shown in this document are for the public [Terraform
+Registry](https://registry.terraform.io), and use its API `<base_url>` of
+`https://registry.terraform.io/v1/modules/`. Note that although the base URL in
+the [discovery document](#service-discovery) _may include_ a trailing slash, we
+include a slash after the placeholder in the `Path`s below for clarity.
+
+## List Modules
+
+These endpoints list modules according to some criteria.
+
+| Method | Path                                  | Produces                   |
+| ------ | ------------------------------------- | -------------------------- |
+| `GET`  | `<base_url>`                          | `application/json`         |
+| `GET`  | `<base_url>/:namespace`               | `application/json`         |
+
+### Parameters
+
+- `namespace` `(string: <optional>)` - Restricts listing to modules published by
+  this user or organization. This is optionally specified as part of the URL
+  path.
+
+### Query Parameters
+
+- `offset`, `limit` `(int: <optional>)` - See [Pagination](#pagination) for details.
+- `provider` `(string: <optional>)` - Limits modules to a specific provider.
+- `verified` `(bool: <optional>)` - If `true`, limits results to only verified
+  modules. Any other value including none returns all modules _including_
+  verified ones.
+
+### Sample Request
+
+```text
+$ curl 'https://registry.terraform.io/v1/modules?limit=2&verified=true'
+```
+
+### Sample Response
+
+```json
+{
+  "meta": {
+    "limit": 2,
+    "current_offset": 0,
+    "next_offset": 2,
+    "next_url": "/v1/modules?limit=2&offset=2&verified=true"
+  },
+  "modules": [
+    {
+      "id": "GoogleCloudPlatform/lb-http/google/1.0.4",
+      "owner": "",
+      "namespace": "GoogleCloudPlatform",
+      "name": "lb-http",
+      "version": "1.0.4",
+      "provider": "google",
+      "description": "Modular Global HTTP Load Balancer for GCE using forwarding rules.",
+      "source": "https://github.com/GoogleCloudPlatform/terraform-google-lb-http",
+      "published_at": "2017-10-17T01:22:17.792066Z",
+      "downloads": 213,
+      "verified": true
+    },
+    {
+      "id": "terraform-aws-modules/vpc/aws/1.5.1",
+      "owner": "",
+      "namespace": "terraform-aws-modules",
+      "name": "vpc",
+      "version": "1.5.1",
+      "provider": "aws",
+      "description": "Terraform module which creates VPC resources on AWS",
+      "source": "https://github.com/terraform-aws-modules/terraform-aws-vpc",
+      "published_at": "2017-11-23T10:48:09.400166Z",
+      "downloads": 29714,
+      "verified": true
+    }
+  ]
+}
+```
+
+## Search Modules
+
+This endpoint allows searching modules.
+
+| Method | Path                                  | Produces                   |
+| ------ | ------------------------------------- | -------------------------- |
+| `GET`  | `<base_url>/search`                   | `application/json`         |
+
+### Query Parameters
+
+- `q` `(string: <required>)` - The search string. Search syntax understood
+  depends on registry implementation. The public registry supports basic keyword
+  or phrase searches.
+- `offset`, `limit` `(int: <optional>)` - See [Pagination](#pagination) for details.
+- `provider` `(string: <optional>)` - Limits results to a specific provider.
+- `namespace` `(string: <optional>)` - Limits results to a specific namespace.
+- `verified` `(bool: <optional>)` - If `true`, limits results to only verified
+  modules. Any other value including none returns all modules _including_
+  verified ones.
+
+### Sample Request
+
+```text
+$ curl 'https://registry.terraform.io/v1/modules/search?q=network&limit=2'
+```
+
+### Sample Response
+
+```json
+{
+  "meta": {
+    "limit": 2,
+    "current_offset": 0,
+    "next_offset": 2,
+    "next_url": "/v1/modules/search?limit=2&offset=2&q=network"
+  },
+  "modules": [
+    {
+      "id": "zoitech/network/aws/0.0.3",
+      "owner": "",
+      "namespace": "zoitech",
+      "name": "network",
+      "version": "0.0.3",
+      "provider": "aws",
+      "description": "This module is intended to be used for configuring an AWS network.",
+      "source": "https://github.com/zoitech/terraform-aws-network",
+      "published_at": "2017-11-23T15:12:06.620059Z",
+      "downloads": 39,
+      "verified": false
+    },
+    {
+      "id": "Azure/network/azurerm/1.1.1",
+      "owner": "",
+      "namespace": "Azure",
+      "name": "network",
+      "version": "1.1.1",
+      "provider": "azurerm",
+      "description": "Terraform Azure RM Module for Network",
+      "source": "https://github.com/Azure/terraform-azurerm-network",
+      "published_at": "2017-11-22T17:15:34.325436Z",
+      "downloads": 1033,
+      "verified": true
+    }
+  ]
+}
+```
+
+## List Available Versions for a Specific Module
+
+This is the primary endpoint for resolving module sources, returning the
+available versions for a given fully-qualified module.
+
+| Method | Path                                  | Produces                   |
+| ------ | ------------------------------------- | -------------------------- |
+| `GET`  | `<base_url>/:namespace/:name/:provider/versions` | `application/json`         |
+
+### Parameters
+
+- `namespace` `(string: <required>)` - The user or organization the module is
+  owned by. This is required and is specified as part of the URL path.
+
+- `name` `(string: <required>)` - The name of the module.
+  This is required and is specified as part of the URL path.
+
+- `provider` `(string: <required>)` - The name of the provider.
+  This is required and is specified as part of the URL path.
+
+### Sample Request
+
+```text
+$ curl https://registry.terraform.io/v1/modules/hashicorp/consul/aws/versions
+```
+
+### Sample Response
+
+The `modules` array in the response always includes the requested module as the
+first element. Other elements of this list, if present, are dependencies of the
+requested module that are provided to potentially avoid additional requests to
+resolve these modules.
+
+Additional modules are not required to be provided but, when present, can be
+used by Terraform to optimize the module installation process.
+
+Each returned module has an array of available versions, which Terraform
+matches against any version constraints given in configuration.
+
+```json
+{
+   "modules": [
+      {
+         "source": "hashicorp/consul/aws",
+         "versions": [
+            {
+               "version": "0.0.1",
+               "submodules" : [
+                  {
+                     "path": "modules/consul-cluster",
+                     "providers": [
+                        {
+                           "name": "aws",
+                           "version": ""
+                        }
+                     ],
+                     "dependencies": []
+                  },
+                  {
+                     "path": "modules/consul-security-group-rules",
+                     "providers": [
+                        {
+                           "name": "aws",
+                           "version": ""
+                        }
+                     ],
+                     "dependencies": []
+                  },
+                  {
+                     "providers": [
+                        {
+                           "name": "aws",
+                           "version": ""
+                        }
+                     ],
+                     "dependencies": [],
+                     "path": "modules/consul-iam-policies"
+                  }
+               ],
+               "root": {
+                  "dependencies": [],
+                  "providers": [
+                     {
+                        "name": "template",
+                        "version": ""
+                     },
+                     {
+                        "name": "aws",
+                        "version": ""
+                     }
+                  ]
+               }
+            }
+         ]
+      }
+   ]
+}
+```
+
+## Download Source Code for a Specific Module Version
+
+This endpoint downloads the specified version of a module for a single provider.
+
+A successful response has no body, and includes the location from which the module
+version's source can be downloaded in the `X-Terraform-Get` header. Note that
+this string may contain special syntax interpreted by Terraform via
+[`go-getter`](https://github.com/hashicorp/go-getter). See the [`go-getter`
+documentation](https://github.com/hashicorp/go-getter#url-format) for details.
+
+The value of `X-Terraform-Get` may instead be a relative URL, indicated by
+beginning with `/`, `./` or `../`, in which case it is resolved relative to
+the full URL of the download endpoint.
+
+| Method | Path                         | Produces                   |
+| ------ | ---------------------------- | -------------------------- |
+| `GET`  | `<base_url>/:namespace/:name/:provider/:version/download` | `application/json`         |
+
+### Parameters
+
+- `namespace` `(string: <required>)` - The user the module is owned by.
+  This is required and is specified as part of the URL path.
+
+- `name` `(string: <required>)` - The name of the module.
+  This is required and is specified as part of the URL path.
+
+- `provider` `(string: <required>)` - The name of the provider.
+  This is required and is specified as part of the URL path.
+
+- `version` `(string: <required>)` - The version of the module.
+  This is required and is specified as part of the URL path.
+
+### Sample Request
+
+```text
+$ curl -i \
+    https://registry.terraform.io/v1/modules/hashicorp/consul/aws/0.0.1/download
+```
+
+### Sample Response
+
+```text
+HTTP/1.1 204 No Content
+Content-Length: 0
+X-Terraform-Get: https://api.github.com/repos/hashicorp/terraform-aws-consul/tarball/v0.0.1//*?archive=tar.gz
+```
 
 ## List Latest Version of Module for All Providers
 
@@ -22,7 +333,7 @@ This endpoint returns the latest version of each provider for a module.
 
 | Method | Path                         | Produces                   |
 | ------ | ---------------------------- | -------------------------- |
-| `GET`  | `/v1/modules/:namespace/:name` | `application/json`         |
+| `GET`  | `<base_url>/:namespace/:name`           | `application/json`         |
 
 ### Parameters
 
@@ -34,7 +345,7 @@ This endpoint returns the latest version of each provider for a module.
 
 ### Query Parameters
 
-- `offset`, `limit` `(int: <optional>)` - See [Pagination](#Pagination) for details.
+- `offset`, `limit` `(int: <optional>)` - See [Pagination](#pagination) for details.
 
 ### Sample Request
 
@@ -82,13 +393,13 @@ $ curl \
 }
 ```
 
-## Latest Module for a Single Provider
+## Latest Version for a Specific Module Provider
 
 This endpoint returns the latest version of a module for a single provider.
 
 | Method | Path                         | Produces                   |
 | ------ | ---------------------------- | -------------------------- |
-| `GET`  | `/v1/modules/:namespace/:name/:provider` | `application/json`         |
+| `GET`  | `<base_url>/:namespace/:name/:provider` | `application/json`         |
 
 ### Parameters
 
@@ -210,7 +521,7 @@ This endpoint returns the specified version of a module for a single provider.
 
 | Method | Path                         | Produces                   |
 | ------ | ---------------------------- | -------------------------- |
-| `GET`  | `/v1/modules/:namespace/:name/:provider/:version` | `application/json`         |
+| `GET`  | `<base_url>/:namespace/:name/:provider/:version` | `application/json`         |
 
 ### Parameters
 
@@ -330,49 +641,6 @@ Note this response has has some fields trimmed for clarity.
 }
 ```
 
-## Download a Specific Module
-
-This endpoint downloads the specified version of a module for a single provider.
-
-A successful response has no body, and includes the URL from which the module
-version's source can be downloaded in the `X-Terraform-Get` header. Note that
-this URL may contain special syntax interpreted by Terraform via
-[`go-getter`](https://github.com/hashicorp/go-getter). See the [`go-getter`
-documentation](https://github.com/hashicorp/go-getter#url-format) for details.
-
-| Method | Path                         | Produces                   |
-| ------ | ---------------------------- | -------------------------- |
-| `GET`  | `/v1/modules/:namespace/:name/:provider/:version/download` | `application/json`         |
-
-### Parameters
-
-- `namespace` `(string: <required>)` - The user the module is owned by.
-  This is required and is specified as part of the URL path.
-
-- `name` `(string: <required>)` - The name of the module.
-  This is required and is specified as part of the URL path.
-
-- `provider` `(string: <required>)` - The name of the provider.
-  This is required and is specified as part of the URL path.
-
-- `version` `(string: <required>)` - The version of the module.
-  This is required and is specified as part of the URL path.
-
-### Sample Request
-
-```text
-$ curl -i \
-    https://registry.terraform.io/v1/modules/hashicorp/consul/aws/0.0.1/download
-```
-
-### Sample Response
-
-```text
-HTTP/1.1 204 No Content
-Content-Length: 0
-X-Terraform-Get: https://api.github.com/repos/hashicorp/terraform-aws-consul/tarball/v0.0.1//*?archive=tar.gz
-```
-
 ## Download the Latest Version of a Module
 
 This endpoint downloads the latest version of a module for a single provider.
@@ -382,7 +650,7 @@ download endpoint (above) for the latest version.
 
 | Method | Path                         | Produces                   |
 | ------ | ---------------------------- | -------------------------- |
-| `GET`  | `/v1/modules/:namespace/:name/:provider/download` | `application/json`         |
+| `GET`  | `<base_url>/:namespace/:name/:provider/download` | `application/json`         |
 
 ### Parameters
 
@@ -393,9 +661,6 @@ download endpoint (above) for the latest version.
   This is required and is specified as part of the URL path.
 
 - `provider` `(string: <required>)` - The name of the provider.
-  This is required and is specified as part of the URL path.
-
-- `version` `(string: <required>)` - The version of the module.
   This is required and is specified as part of the URL path.
 
 ### Sample Request

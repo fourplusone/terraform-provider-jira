@@ -643,67 +643,6 @@ func TestContext2Plan_moduleProviderInheritDeep(t *testing.T) {
 	}
 }
 
-func TestContext2Plan_moduleProviderDefaults(t *testing.T) {
-	var l sync.Mutex
-	var calls []string
-	toCount := 0
-
-	m := testModule(t, "plan-module-provider-defaults")
-	ctx := testContext2(t, &ContextOpts{
-		Module: m,
-		ProviderResolver: ResourceProviderResolverFixed(
-			map[string]ResourceProviderFactory{
-				"aws": func() (ResourceProvider, error) {
-					l.Lock()
-					defer l.Unlock()
-
-					p := testProvider("aws")
-					p.ConfigureFn = func(c *ResourceConfig) error {
-						if v, ok := c.Get("from"); !ok || v.(string) != "root" {
-							return fmt.Errorf("bad")
-						}
-						if v, ok := c.Get("to"); ok && v.(string) == "child" {
-							toCount++
-						}
-
-						return nil
-					}
-					p.DiffFn = func(
-						info *InstanceInfo,
-						state *InstanceState,
-						c *ResourceConfig) (*InstanceDiff, error) {
-						v, _ := c.Get("from")
-
-						l.Lock()
-						defer l.Unlock()
-						calls = append(calls, v.(string))
-						return testDiffFn(info, state, c)
-					}
-					return p, nil
-				},
-			},
-		),
-	})
-
-	_, err := ctx.Plan()
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-
-	if toCount != 1 {
-		t.Fatalf(
-			"provider in child didn't set proper config\n\n"+
-				"toCount: %d", toCount)
-	}
-
-	actual := calls
-	sort.Strings(actual)
-	expected := []string{"child", "root"}
-	if !reflect.DeepEqual(actual, expected) {
-		t.Fatalf("bad: %#v", actual)
-	}
-}
-
 func TestContext2Plan_moduleProviderDefaultsVar(t *testing.T) {
 	var l sync.Mutex
 	var calls []string
@@ -748,11 +687,12 @@ func TestContext2Plan_moduleProviderDefaultsVar(t *testing.T) {
 	}
 
 	expected := []string{
+		"child\nchild\n",
 		"root\n",
-		"root\nchild\n",
 	}
+	sort.Strings(calls)
 	if !reflect.DeepEqual(calls, expected) {
-		t.Fatalf("BAD: %#v", calls)
+		t.Fatalf("expected:\n%#v\ngot:\n%#v\n", expected, calls)
 	}
 }
 
@@ -2461,6 +2401,32 @@ func TestContext2Plan_hook(t *testing.T) {
 	}
 }
 
+func TestContext2Plan_closeProvider(t *testing.T) {
+	// this fixture only has an aliased provider located in the module, to make
+	// sure that the provier name contains a path more complex than
+	// "provider.aws".
+	m := testModule(t, "plan-close-module-provider")
+	p := testProvider("aws")
+	p.DiffFn = testDiffFn
+	ctx := testContext2(t, &ContextOpts{
+		Module: m,
+		ProviderResolver: ResourceProviderResolverFixed(
+			map[string]ResourceProviderFactory{
+				"aws": testProviderFuncFixed(p),
+			},
+		),
+	})
+
+	_, err := ctx.Plan()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if !p.CloseCalled {
+		t.Fatal("provider not closed")
+	}
+}
+
 func TestContext2Plan_orphan(t *testing.T) {
 	m := testModule(t, "plan-orphan")
 	p := testProvider("aws")
@@ -2767,6 +2733,26 @@ STATE:
 	}
 }
 
+func TestContext2Plan_targetEmpty(t *testing.T) {
+	m := testModule(t, "plan-targeted")
+	p := testProvider("aws")
+	p.DiffFn = testDiffFn
+	ctx := testContext2(t, &ContextOpts{
+		Module: m,
+		ProviderResolver: ResourceProviderResolverFixed(
+			map[string]ResourceProviderFactory{
+				"aws": testProviderFuncFixed(p),
+			},
+		),
+		Targets: []string{""},
+	})
+
+	_, err := ctx.Plan()
+	if err == nil {
+		t.Fatal("should error")
+	}
+}
+
 // Test that targeting a module properly plans any inputs that depend
 // on another module.
 func TestContext2Plan_targetedCrossModule(t *testing.T) {
@@ -3000,6 +2986,28 @@ STATE:
 `)
 	if actual != expected {
 		t.Fatalf("expected:\n%s\n\ngot:\n%s", expected, actual)
+	}
+}
+
+// ensure that outputs missing references due to targetting are removed from
+// the graph.
+func TestContext2Plan_outputContainsTargetedResource(t *testing.T) {
+	m := testModule(t, "plan-untargeted-resource-output")
+	p := testProvider("aws")
+	p.DiffFn = testDiffFn
+	ctx := testContext2(t, &ContextOpts{
+		Module: m,
+		ProviderResolver: ResourceProviderResolverFixed(
+			map[string]ResourceProviderFactory{
+				"aws": testProviderFuncFixed(p),
+			},
+		),
+		Targets: []string{"module.mod.aws_instance.a"},
+	})
+
+	_, err := ctx.Plan()
+	if err != nil {
+		t.Fatalf("err: %s", err)
 	}
 }
 
@@ -3559,12 +3567,9 @@ func TestContext2Plan_resourceNestedCount(t *testing.T) {
 		State: s,
 	})
 
-	w, e := ctx.Validate()
-	if len(w) > 0 {
-		t.Fatalf("warnings generated on validate: %#v", w)
-	}
-	if len(e) > 0 {
-		t.Fatalf("errors generated on validate: %#v", e)
+	diags := ctx.Validate()
+	if len(diags) != 0 {
+		t.Fatalf("bad: %#v", diags)
 	}
 
 	_, err := ctx.Refresh()
@@ -3587,28 +3592,34 @@ STATE:
 
 aws_instance.bar.0:
   ID = bar0
+  provider = provider.aws
 
   Dependencies:
     aws_instance.foo.*
 aws_instance.bar.1:
   ID = bar1
+  provider = provider.aws
 
   Dependencies:
     aws_instance.foo.*
 aws_instance.baz.0:
   ID = baz0
+  provider = provider.aws
 
   Dependencies:
     aws_instance.bar.*
 aws_instance.baz.1:
   ID = baz1
+  provider = provider.aws
 
   Dependencies:
     aws_instance.bar.*
 aws_instance.foo.0:
   ID = foo0
+  provider = provider.aws
 aws_instance.foo.1:
   ID = foo1
+  provider = provider.aws
 `)
 	if actual != expected {
 		t.Fatalf("bad:\n%s\n\nexpected\n\n%s", actual, expected)
@@ -3636,12 +3647,9 @@ output "out" {
 	})
 
 	// if this ever fails to pass validate, add a resource to reference in the config
-	w, e := ctx.Validate()
-	if len(w) > 0 {
-		t.Fatalf("warnings generated on validate: %#v", w)
-	}
-	if len(e) > 0 {
-		t.Fatalf("errors generated on validate: %v", e)
+	diags := ctx.Validate()
+	if len(diags) != 0 {
+		t.Fatalf("bad: %#v", diags)
 	}
 
 	_, err := ctx.Refresh()
@@ -3650,15 +3658,8 @@ output "out" {
 	}
 
 	_, err = ctx.Plan()
-	switch {
-	case featureOutputErrors:
-		if err == nil {
-			t.Fatal("expected error")
-		}
-	default:
-		if err != nil {
-			t.Fatalf("plan err: %s", err)
-		}
+	if err == nil {
+		t.Fatal("expected error")
 	}
 }
 
@@ -3691,12 +3692,9 @@ resource "aws_instance" "foo" {
 	})
 
 	// if this ever fails to pass validate, add a resource to reference in the config
-	w, e := ctx.Validate()
-	if len(w) > 0 {
-		t.Fatalf("warnings generated on validate: %#v", w)
-	}
-	if len(e) > 0 {
-		t.Fatalf("errors generated on validate: %v", e)
+	diags := ctx.Validate()
+	if len(diags) != 0 {
+		t.Fatalf("bad: %#v", diags)
 	}
 
 	_, err := ctx.Refresh()
@@ -3705,15 +3703,7 @@ resource "aws_instance" "foo" {
 	}
 
 	_, err = ctx.Plan()
-	switch {
-	case featureOutputErrors:
-		if err == nil {
-			t.Fatal("expected error")
-		}
-	default:
-		if err != nil {
-			t.Fatalf("plan err: %s", err)
-		}
+	if err == nil {
+		t.Fatal("expected error")
 	}
-
 }

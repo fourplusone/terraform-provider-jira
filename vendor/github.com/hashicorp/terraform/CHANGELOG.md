@@ -1,3 +1,255 @@
+## 0.11.11 (December 14, 2018)
+
+IMPROVEMENTS:
+
+* backend/remote: Return detailed version (in)compatibility information ([#19659](https://github.com/hashicorp/terraform/issues/19659))
+* core: Enhance service discovery error handling and messaging ([#19589](https://github.com/hashicorp/terraform/issues/19589))
+* core: Add support to retrieve version constraints to service discovery ([#19647](https://github.com/hashicorp/terraform/issues/19647))
+
+BUG FIXES:
+
+* backend/remote: Fix symlink issues and Windows support when uploading configurations ([#19573](https://github.com/hashicorp/terraform/issues/19573))
+
+## 0.11.10 (October 23, 2018)
+
+BUG FIXES:
+
+* backend/local: Do not use backend operation variables ([#19175](https://github.com/hashicorp/terraform/issues/19175))
+
+## 0.11.9 (October 19, 2018)
+
+IMPROVEMENTS:
+
+* backend/remote: Also show policy check output when running a plan ([#19088](https://github.com/hashicorp/terraform/issues/19088))
+
+## 0.11.9-beta1 (October 15, 2018)
+
+IMPROVEMENTS:
+
+* provisioner/chef: Use user:group chown syntax ([#18533](https://github.com/hashicorp/terraform/issues/18533))
+* helper/resource: Add `ParallelTest()` to allow opt-in acceptance testing concurrency with `t.Parallel()` ([#18688](https://github.com/hashicorp/terraform/issues/18688))
+* backend/manta: Deprecate the `objectName` attribute in favor of the new `object_name` attribute ([#18759](https://github.com/hashicorp/terraform/issues/18759))
+* backend/migrations: Migrate existing non-empty default states when the backend only supports named states ([#18760](https://github.com/hashicorp/terraform/issues/18760))
+* provider/terraform: `terraform_remote_state` now accepts complex backend configurations ([#18759](https://github.com/hashicorp/terraform/issues/18759))
+* backend/remote: Implement the state.Locker interface to support state locking ([#18826](https://github.com/hashicorp/terraform/issues/18826))
+* backend/remote: Add initial support for the apply command ([#18950](https://github.com/hashicorp/terraform/issues/18950))
+* backend/remote: Ask to cancel pending remote operations when Ctrl-C is pressed ([#18979](https://github.com/hashicorp/terraform/issues/18979))
+* backend/remote: Add support for the `-no-color` command line flag ([#19002](https://github.com/hashicorp/terraform/issues/19002))
+* backend/remote: Prevent running plan or apply without permissions ([#19012](https://github.com/hashicorp/terraform/issues/19012))
+* backend/remote: Add checks for all flags we currently don’t support ([#19013](https://github.com/hashicorp/terraform/issues/19013))
+* backend/remote: Allow enhanced backends to pass custom exit codes ([#19014](https://github.com/hashicorp/terraform/issues/19014))
+* backend/remote: Properly handle workspaces that auto apply changes ([#19022](https://github.com/hashicorp/terraform/issues/19022))
+* backend/remote: Don’t ask questions when `-auto-approve` is set ([#19035](https://github.com/hashicorp/terraform/issues/19035))
+* backend/remote: Print status updates while waiting for the run to start ([#19047](https://github.com/hashicorp/terraform/issues/19047))
+
+BUG FIXES:
+
+* backend/azurerm: Update endpoint for Azure Government (SDK Update) ([#18877](https://github.com/hashicorp/terraform/issues/18877))
+* backend/migrations: Check all workspaces for existing non-empty states ([#18757](https://github.com/hashicorp/terraform/issues/18757))
+* provider/terraform: Always call the backend validation method to prevent a possible panic ([#18759](https://github.com/hashicorp/terraform/issues/18759))
+* backend/remote: Take working directories (optional on workspaces) into account ([#18773](https://github.com/hashicorp/terraform/issues/18773))
+* backend/remote: Use pagination when retrieving states (workspaces) ([#18817](https://github.com/hashicorp/terraform/issues/18817))
+* backend/remote: Add the run ID to associate state when being used in TFE ([#18818](https://github.com/hashicorp/terraform/issues/18818))
+* core: Make sure the state is locked before it is used when `(un)tainting` ([#18894](https://github.com/hashicorp/terraform/issues/18894))
+
+## 0.11.8 (August 15, 2018)
+
+NEW FEATURES:
+
+* **New `remote` backend**: Inital release of the `remote` backend for use with Terraform Enterprise and Private Terraform Enterprise ([#18596](https://github.com/hashicorp/terraform/issues/18596))
+
+IMPROVEMENTS:
+
+* cli: display workspace name in apply and destroy commands if not default ([#18253](https://github.com/hashicorp/terraform/issues/18253))
+* cli: Remove error on empty outputs when `-json` is set ([#11721](https://github.com/hashicorp/terraform/issues/11721))
+* helper/schema: Resources have a new `DeprecationMessage` property that can be set to a string, allowing full resources to be deprecated ([#18286](https://github.com/hashicorp/terraform/issues/18286))
+* backend/s3: Allow fallback to session-derived credentials (e.g. session via `AWS_PROFILE` environment variable and shared configuration) ([#17901](https://github.com/hashicorp/terraform/issues/17901))
+* backend/s3: Allow usage of `AWS_EC2_METADATA_DISABLED` environment variable ([#17901](https://github.com/hashicorp/terraform/issues/17901))
+
+BUG FIXES:
+
+* config: The `rsadecrypt` interpolation function will no longer include the private key in an error message if it cannot be processed. ([#18333](https://github.com/hashicorp/terraform/issues/18333))
+* provisioner/habitat: add missing space for service url ([#18400](https://github.com/hashicorp/terraform/issues/18400))
+* backend/s3: Skip extraneous EC2 metadata redirect ([#18570](https://github.com/hashicorp/terraform/issues/18570))
+
+## 0.11.7 (April 10, 2018)
+
+BUG FIXES:
+
+* core: Fix handling of interpolated counts when applying a destroy plan ([#17824](https://github.com/hashicorp/terraform/issues/17824))
+
+PROVIDER SDK CHANGES (not user-facing):
+
+* helper/schema: Invoking `ForceNew` on a key being removed from config during
+  diff customization now correctly exposes that key as being removed in the
+  updated diff. This prevents diff mismatches under certain circumstances.
+  ([#17811](https://github.com/hashicorp/terraform/issues/17811))
+* helper/schema: Invoking `ForceNew` during diff customization on its own no
+  longer writes any new data to the diff. This prevents writing of new nil to
+  zero value diffs for sub-fields of complex lists and sets where a diff did not
+  exist before. ([#17811](https://github.com/hashicorp/terraform/issues/17811))
+
+## 0.11.6 (April 5, 2018)
+
+BUG FIXES:
+
+* cli: Don't allow -target without arguments ([#16360](https://github.com/hashicorp/terraform/issues/16360))
+* cli: Fix strange formatting of list and map values in the `terraform console` command ([#17714](https://github.com/hashicorp/terraform/issues/17714))
+* core: Don't evaluate unused outputs during a full destroy operation ([#17768](https://github.com/hashicorp/terraform/issues/17768))
+* core: Fix local and output evaluation when they reference a resource being scaled down to 0 ([#17765](https://github.com/hashicorp/terraform/issues/17765))
+* connection/ssh: Retry on authentication failures when the remote service is available before it is completely configured ([#17744](https://github.com/hashicorp/terraform/issues/17744))
+* connection/winrm: Get execution errors from winrm commands ([#17788](https://github.com/hashicorp/terraform/issues/17788))
+* connection/winrm: Support NTLM authentication ([#17748](https://github.com/hashicorp/terraform/issues/17748))
+* provisioner/chef: Fix regression causing connection to be prematurely closed ([#17609](https://github.com/hashicorp/terraform/pull/17609))
+* provisioner/habitat: Set channel and builder URL during install, and enable service before start ([#17403](https://github.com/hashicorp/terraform/issues/17403)) ([#17781](https://github.com/hashicorp/terraform/issues/17781))
+
+PROVIDER SDK CHANGES (not user-facing):
+
+* helper/schema: Attribute value is no longer included in error message when `ConflictsWith` keys are used together. ([#17738](https://github.com/hashicorp/terraform/issues/17738))
+
+## 0.11.5 (March 21, 2018)
+
+IMPROVEMENTS:
+
+* provisioner/chef: Allow specifying a channel ([#17355](https://github.com/hashicorp/terraform/issues/17355))
+
+BUG FIXES:
+
+* core: Fix the timeout handling for provisioners ([#17646](https://github.com/hashicorp/terraform/issues/17646))
+* core: Ensure that state is unlocked after running console, import, graph or push commands ([#17645](https://github.com/hashicorp/terraform/issues/17645))
+* core: Don't open multiple file descriptors for local state files, which would cause reading the state to fail on Windows ([#17636](https://github.com/hashicorp/terraform/issues/17636))
+
+## 0.11.4 (March 15, 2018)
+
+IMPROVEMENTS:
+
+* cli: `terraform state list` now accepts a new argument `-id=...` for filtering resources for display by their remote ids ([#17221](https://github.com/hashicorp/terraform/issues/17221))
+* cli: `terraform destroy` now uses the option `-auto-approve` instead of `-force`, for consistency with `terraform apply`. The old flag is preserved for backward-compatibility, but is now deprecated; it will be retained for at least one major release. ([#17218](https://github.com/hashicorp/terraform/issues/17218))
+* connection/ssh: Add support for host key verification ([#17354](https://github.com/hashicorp/terraform/issues/17354))
+* backend/s3: add support for the cn-northwest-1 region ([#17216](https://github.com/hashicorp/terraform/issues/17216))
+* provisioner/local-exec: Allow setting custom environment variables when running commands ([#13880](https://github.com/hashicorp/terraform/issues/13880))
+* provisioner/habitat: Detect if hab user exists and only create if necessary ([#17195](https://github.com/hashicorp/terraform/issues/17195))
+* provisioner/habitat: Allow custom service name ([#17196](https://github.com/hashicorp/terraform/issues/17196))
+* general: https URLs are now supported in the HTTP_PROXY environment variable for URLs interpreted by Terraform Core. (This will not immediately be true for all Terraform provider plugins, since each must upgrade its own HTTP client.) [go1.10:net/http](https://golang.org/doc/go1.10#net/http)
+
+BUG FIXES:
+
+* core: Make sure state is locked during initial refresh ([#17422](https://github.com/hashicorp/terraform/issues/17422))
+* core: Halt on fatal provisioner errors, rather than retrying until a timeout ([#17359](https://github.com/hashicorp/terraform/issues/17359))
+* core: When handling a forced exit due to multiple interrupts, prevent the process from exiting while the state is being written ([#17323](https://github.com/hashicorp/terraform/issues/17323))
+* core: Fix handling of locals and outputs at destroy time ([#17241](https://github.com/hashicorp/terraform/issues/17241))
+* core: Fix regression in handling of `count` arguments that refer to `count` attributes from other resources ([#17548](https://github.com/hashicorp/terraform/issues/17548))
+* provider/terraform: restore support for the deprecated `environment` argument to the `terraform_remote_state` data source ([#17545](https://github.com/hashicorp/terraform/issues/17545))
+* backend/gcs: Report the correct lock ID for GCS state locks ([#17397](https://github.com/hashicorp/terraform/issues/17397))
+
+PROVIDER SDK CHANGES (not user-facing):
+
+* helper/schema: Prevent crash on removal of computed field in CustomizeDiff ([#17261](https://github.com/hashicorp/terraform/issues/17261))
+* helper/schema: Allow ResourceDiff.ForceNew on nested fields (avoid crash) ([#17463](https://github.com/hashicorp/terraform/issues/17463))
+* helper/schema: Allow `TypeMap` to have a `*schema.Schema` as its `Elem`, for consistency with `TypeSet` and `TypeList` ([#17097](https://github.com/hashicorp/terraform/issues/17097))
+* helper/validation: Add ValidateRFC3339TimeString function ([#17484](https://github.com/hashicorp/terraform/issues/17484))
+
+## 0.11.3 (January 31, 2018)
+
+IMPROVEMENTS:
+
+* backend/s3: add support for the eu-west-3 region ([#17193](https://github.com/hashicorp/terraform/issues/17193))
+
+
+BUG FIXES:
+
+* core: fix crash when an error is encountered during refresh ([#17076](https://github.com/hashicorp/terraform/issues/17076))
+* config: fixed crash when module source is invalid ([#17134](https://github.com/hashicorp/terraform/issues/17134))
+* config: allow the count pseudo-attribute of a resource to be interpolated into `provisioner` and `connection` blocks without errors ([#17133](https://github.com/hashicorp/terraform/issues/17133))
+* backend/s3: allow the workspace name to be a prefix of workspace_key_prefix ([#17086](https://github.com/hashicorp/terraform/issues/17086))
+* provisioner/chef: fix crash when validating `use_policyfile` ([#17147](https://github.com/hashicorp/terraform/issues/17147))
+
+## 0.11.2 (January 9, 2018)
+
+BACKWARDS INCOMPATIBILITIES / NOTES:
+
+* backend/gcs: The gcs remote state backend was erroneously creating the state bucket if it didn't exist. This is not the intended behavior of backends, as Terraform cannot track or manage that resource. The target bucket must now be created separately, before using it with Terraform. ([#16865](https://github.com/hashicorp/terraform/issues/16865))
+
+NEW FEATURES:
+
+* **[Habitat](https://www.habitat.sh/) Provisioner** allowing automatic installation of the Habitat agent ([#16280](https://github.com/hashicorp/terraform/issues/16280))
+
+IMPROVEMENTS:
+
+* core: removed duplicate prompts and clarified working when migration backend configurations ([#16939](https://github.com/hashicorp/terraform/issues/16939))
+* config: new `rsadecrypt` interpolation function allows decrypting a base64-encoded ciphertext using a given private key. This is particularly useful for decrypting the password for a Windows instance on AWS EC2, but is generic and may find other uses too. ([#16647](https://github.com/hashicorp/terraform/issues/16647))
+* config: new `timeadd` interpolation function allows calculating a new timestamp relative to an existing known timestamp. ([#16644](https://github.com/hashicorp/terraform/issues/16644))
+* cli: Passing an empty string to `-plugin-dir` during init will remove previously saved paths ([#16969](https://github.com/hashicorp/terraform/issues/16969))
+* cli: Module and provider installation (and some other Terraform features) now implement [RFC6555](https://tools.ietf.org/html/rfc6555) when making outgoing HTTP requests, which should improve installation reliability for dual-stack (both IPv4 and IPv6) hosts running on networks that have non-performant or broken IPv6 Internet connectivity by trying both IPv4 and IPv6 connections. ([#16805](https://github.com/hashicorp/terraform/issues/16805))
+* backend/s3: it is now possible to disable the region check, for improved compatibility with third-party services that attempt to mimic the S3 API. ([#16757](https://github.com/hashicorp/terraform/issues/16757))
+* backend/s3: it is now possible to for the path-based S3 API form, for improved compatibility with third-party services that attempt to mimic the S3 API. ([#17001](https://github.com/hashicorp/terraform/issues/17001))
+* backend/s3: it is now possible to use named credentials from the `~/.aws/credentials` file, similarly to the AWS plugin ([#16661](https://github.com/hashicorp/terraform/issues/16661))
+* backend/manta: support for Triton RBAC ([#17003](https://github.com/hashicorp/terraform/issues/17003))
+* backend/gcs: support for customer-supplied encryption keys for remote state buckets ([#16936](https://github.com/hashicorp/terraform/issues/16936))
+* provider/terraform: in `terraform_remote_state`, the argument `environment` is now deprecated in favor of `workspace`. The `environment` argument will be removed in a later Terraform release. ([#16558](https://github.com/hashicorp/terraform/issues/16558))
+
+BUG FIXES:
+
+* config: fixed crash in `substr` interpolation function with invalid offset ([#17043](https://github.com/hashicorp/terraform/issues/17043))
+* config: Referencing a count attribute in an output no longer generates a warning ([#16866](https://github.com/hashicorp/terraform/issues/16866))
+* cli: Terraform will no longer crash when `terraform plan`, `terraform apply`, and some other commands encounter an invalid provider version constraint in configuration, generating a proper error message instead. ([#16867](https://github.com/hashicorp/terraform/issues/16867))
+* backend/gcs: The usage of the GOOGLE_CREDENTIALS environment variable now matches that of the google provider ([#16865](https://github.com/hashicorp/terraform/issues/16865))
+* backend/gcs: fixed the locking methodology to avoid "double-locking" issues when used with the `terraform_remote_state` data source ([#16852](https://github.com/hashicorp/terraform/issues/16852))
+* backend/s3: the `workspace_key_prefix` can now be an empty string or contain slashes ([#16932](https://github.com/hashicorp/terraform/issues/16932))
+* provisioner/salt-masterless: now waits for all of the remote operations to complete before returning ([#16704](https://github.com/hashicorp/terraform/issues/16704))
+
+## 0.11.1 (November 30, 2017)
+
+IMPROVEMENTS:
+
+* modules: Modules can now receive a specific provider configuration in the `providers` map, even if it's only implicitly used ([#16619](https://github.com/hashicorp/terraform/issues/16619))
+* config: Terraform will now detect and warn about outputs containing potentially-problematic references to resources with `count` set where the references does not use the "splat" syntax. This identifies situations where an output may [reference a resource with `count = 0`](https://www.terraform.io/upgrade-guides/0-11.html#referencing-attributes-from-resources-with-count-0) even if the `count` expression does not _currently_ evaluate to `0`, allowing the bug to be detected and fixed _before_ the value is later changed to `0` and would thus become an error. **This usage will become a fatal error in Terraform 0.12**. ([#16735](https://github.com/hashicorp/terraform/issues/16735))
+* core: A new environment variable `TF_WARN_OUTPUT_ERRORS=1` is supported to opt out of the behavior introduced in 0.11.0 where errors in output expressions halt execution. This restores the previous behavior where such errors are ignored, allowing users to apply problematic configurations without fixing all of the errors. This opt-out will be removed in Terraform 0.12, so it is strongly recommended to use the new warning described in the previous item to detect and fix these problematic expressions. ([#16782](https://github.com/hashicorp/terraform/issues/16782))
+
+BUG FIXES:
+
+* cli: fix crash when subcommands with sub-subcommands are accidentally provided as a single argument, such as `terraform "workspace list"` ([#16789](https://github.com/hashicorp/terraform/issues/16789))
+
+## 0.11.0 (November 16, 2017)
+
+The following list combines the changes from 0.11.0-beta1 and 0.11.0-rc1 to give the full set of changes since 0.10.8. For details on each of the individual pre-releases, please see [the 0.11.0-rc1 CHANGELOG](https://github.com/hashicorp/terraform/blob/v0.11.0-rc1/CHANGELOG.md).
+
+BACKWARDS INCOMPATIBILITIES / NOTES:
+
+The following items give an overview of the incompatibilities and other noteworthy changes in this release. For more details on some of these changes, along with information on how to upgrade existing configurations where needed, see [the v0.11 upgrade guide](https://www.terraform.io/upgrade-guides/0-11.html).
+
+* Output interpolation errors are now fatal. Module configs with unused outputs which contained errors will no longer be valid.
+* Module configuration blocks have 2 new reserved attribute names, "providers" and "version". Modules using these as input variables will need to be updated.
+* The module provider inheritance rules have changed. Inherited provider configurations will no longer be merged with local configurations, and additional (aliased) provider configurations must be explicitly passed between modules when shared. See [the upgrade guide](https://www.terraform.io/upgrade-guides/0-11.html) for more details.
+* The command `terraform apply` with no explicit plan argument is now interactive by default. Specifically, it will show the generated plan and wait for confirmation before applying it, similar to the existing behavior of `terraform destroy`. The behavior is unchanged when a plan file argument is provided, and the previous behavior can be obtained _without_ a plan file by using the `-auto-approve` option.
+* The `terraform` provider (that is, the provider that contains the `terraform_remote_state` data source) has been re-incorporated as a built-in provider in the Terraform Core executable. In 0.10 it was split into a separate plugin along with all of the other providers, but this provider uses several internal Terraform Core APIs and so in practice it's been confusing to version that separately from Terraform Core. As a consequence, this provider no longer supports version constraints, and so `version` attributes for this provider in configuration must be removed.
+* When remote state is enabled, Terraform will no longer generate a local `terraform.tfstate.backup` file before updating remote state. Previously this file could potentially be used to recover a previous state to help recover after a mistake, but it also caused a potentially-sensitive state file to be generated in an unexpected location that may be inadvertently copied or checked in to version control. With this local backup now removed, we recommend instead relying on versioning or backup mechanisms provided by the backend, such as Amazon S3 versioning or Terraform Enterprise's built-in state history mechanism. (Terraform will still create the local file `errored.tfstate` in the unlikely event that there is an error when writing to the remote backend.)
+
+NEW FEATURES:
+
+* modules: Module configuration blocks now have a "version" attribute, to set a version constraint for modules sourced from a registry. ([#16466](https://github.com/hashicorp/terraform/issues/16466))
+* modules: Module configuration blocks now have a "providers" attribute, to map a provider configuration from the current module into a submodule ([#16379](https://github.com/hashicorp/terraform/issues/16379))
+* backend/gcs: The gcs remote state backend now supports workspaces and locking.
+* backend/manta: The Manta backend now supports workspaces and locking ([#16296](https://github.com/hashicorp/terraform/issues/16296))
+
+IMPROVEMENTS:
+
+* cli: The `terraform apply` command now waits for interactive approval of the generated plan before applying it, unless an explicit plan file is provided. ([#16502](https://github.com/hashicorp/terraform/issues/16502))
+* cli: The `terraform version` command now prints out the version numbers of initialized plugins as well as the version of Terraform core, so that they can be more easily shared when opening GitHub Issues, etc. ([#16439](https://github.com/hashicorp/terraform/issues/16439))
+* cli: A new `TF_DATA_DIR` environment variable can be used to override the location where Terraform stores the files normally placed in the `.terraform` directory. ([#16207](https://github.com/hashicorp/terraform/issues/16207))
+* provider/terraform: now built in to Terraform Core so that it will always have the same backend functionality as the Terraform release it corresponds to. ([#16543](https://github.com/hashicorp/terraform/issues/16543))
+
+BUG FIXES:
+
+* config: Provider config in submodules will no longer be overridden by parent providers with the same name. ([#16379](https://github.com/hashicorp/terraform/issues/16379))
+* cli: When remote state is enabled, Terraform will no longer generate a local `terraform.tfstate.backup` file before updating remote state. ([#16464](https://github.com/hashicorp/terraform/issues/16464))
+* core: state now includes a reference to the provider configuration most recently used to create or update a resource, so that the same configuration can be used to destroy that resource if its configuration (including the explicit pointer to a provider configuration) is removed ([#16586](https://github.com/hashicorp/terraform/issues/16586))
+* core: Module outputs can now produce errors, preventing them from silently propagating through the config. ([#16204](https://github.com/hashicorp/terraform/issues/16204))
+* backend/gcs: will now automatically add a slash to the given prefix if not present, since without it the workspace enumeration does not function correctly ([#16585](https://github.com/hashicorp/terraform/issues/16585))
+
+PROVIDER FRAMEWORK CHANGES (not user-facing):
+
+* helper/schema: Loosen validation for 'id' field ([#16456](https://github.com/hashicorp/terraform/issues/16456))
 
 ## 0.10.8 (October 25, 2017)
 

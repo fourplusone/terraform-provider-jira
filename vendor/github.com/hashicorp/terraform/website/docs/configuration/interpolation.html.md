@@ -116,7 +116,7 @@ access, a function call, or even another conditional. The true and false
 value can also be any valid interpolation syntax. The returned types by
 the true and false side must be the same.
 
-The support operators are:
+The supported operators are:
 
   * Equality: `==` and `!=`
   * Numerical comparison: `>`, `<`, `>=`, `<=`
@@ -140,6 +140,13 @@ not be created at all.
 Terraform ships with built-in functions. Functions are called with the
 syntax `name(arg, arg2, ...)`. For example, to read a file:
 `${file("path.txt")}`.
+
+~> **NOTE**: Proper escaping is required for JSON field values containing quotes
+(`"`) such as `environment` values. If directly setting the JSON, they should be
+escaped as `\"` in the JSON,  e.g. `"value": "I \"love\" escaped quotes"`. If
+using a Terraform variable value, they should be escaped as `\\\"` in the
+variable, e.g. `value = "I \\\"love\\\" escaped quotes"` in the variable and
+`"value": "${var.myvariable}"` in the JSON.
 
 ### Supported built-in functions
 
@@ -179,6 +186,11 @@ The supported built-in functions are:
       to the argument.
 
   * `chomp(string)` - Removes trailing newlines from the given string.
+
+  * `chunklist(list, size)` - Returns the `list` items chunked by `size`.
+    Examples:
+    * `chunklist(aws_subnet.foo.*.id, 1)`: will outputs `[["id1"], ["id2"], ["id3"]]`
+    * `chunklist(var.list_of_strings, 2)`: will outputs `[["id1", "id2"], ["id3", "id4"], ["id5"]]`
 
   * `cidrhost(iprange, hostnum)` - Takes an IP address range in CIDR notation
     and creates an IP address with the given host number. If given host
@@ -230,15 +242,10 @@ The supported built-in functions are:
       * `element(aws_subnet.foo.*.id, count.index)`
       * `element(var.list_of_strings, 2)`
 
-  * `chunklist(list, size)` - Returns the `list` items chunked by `size`.
-      Examples:
-      * `list(aws_subnet.foo.*.id, 1)`: will outputs `[["id1"], ["id2"], ["id3"]]`
-      * `list(var.list_of_strings, 2)`: will outputs `[["id1", "id2"], ["id3", "id4"], ["id5"]`
-
   * `file(path)` - Reads the contents of a file into the string. Variables
       in this file are _not_ interpolated. The contents of the file are
       read as-is. The `path` is interpreted relative to the working directory.
-      [Path variables](#path-variables) can be used to reference paths relative
+      [Path variables](#path-information) can be used to reference paths relative
       to other base locations. For example, when using `file()` from inside a
       module, you generally want to make the path relative to the module base,
       like this: `file("${path.module}/file")`.
@@ -355,6 +362,10 @@ The supported built-in functions are:
       `n` is the index or name of the subcapture. If using a regular expression,
       the syntax conforms to the [re2 regular expression syntax](https://github.com/google/re2/wiki/Syntax).
 
+  * `rsadecrypt(string, key)` - Decrypts `string` using RSA. The padding scheme
+    PKCS #1 v1.5 is used. The `string` must be base64-encoded. `key` must be an
+    RSA private key in PEM format. You may use `file()` to load it from a file.
+
   * `sha1(string)` - Returns a (conventional) hexadecimal representation of the
     SHA-1 hash of the given string.
     Example: `"${sha1("${aws_vpc.default.tags.customer}-s3-bucket")}"`
@@ -395,6 +406,9 @@ The supported built-in functions are:
    invocation of the function, so in order to prevent diffs on every plan & apply, it must be used with the
    [`ignore_changes`](/docs/configuration/resources.html#ignore-changes) lifecycle attribute.
 
+  * `timeadd(time, duration)` - Returns a UTC timestamp string corresponding to adding a given `duration` to `time` in RFC 3339 format.      
+    For example, `timeadd("2017-11-22T00:00:00Z", "10m")` produces a value `"2017-11-22T00:10:00Z"`. 
+    
   * `title(string)` - Returns a copy of the string with the first characters of all the words capitalized.
 
   * `transpose(map)` - Swaps the keys and list values in a map of lists of strings. For example, transpose(map("a", list("1", "2"), "b", list("2", "3")) produces a value equivalent to map("1", list("a"), "2", list("a", "b"), "3", list("b")).
@@ -405,7 +419,7 @@ The supported built-in functions are:
 
   * `urlencode(string)` - Returns an URL-safe copy of the string.
 
-  * `uuid()` - Returns a UUID string in RFC 4122 v4 format. This string will change with every invocation of the function, so in order to prevent diffs on every plan & apply, it must be used with the [`ignore_changes`](/docs/configuration/resources.html#ignore-changes) lifecycle attribute.
+  * `uuid()` - Returns a random UUID string. This string will change with every invocation of the function, so in order to prevent diffs on every plan & apply, it must be used with the [`ignore_changes`](/docs/configuration/resources.html#ignore-changes) lifecycle attribute.
 
   * `values(map)` - Returns a list of the map values, in the order of the keys
     returned by the `keys` function. This function only works on flat maps and

@@ -1,14 +1,13 @@
 package command
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/terraform/backend"
 	"github.com/hashicorp/terraform/config"
 	"github.com/hashicorp/terraform/config/module"
+	"github.com/hashicorp/terraform/tfdiags"
 )
 
 // PlanCommand is a Command implementation that compares a Terraform
@@ -69,13 +68,16 @@ func (c *PlanCommand) Run(args []string) int {
 		configPath = ""
 	}
 
+	var diags tfdiags.Diagnostics
+
 	// Load the module if we don't have one yet (not running from plan)
 	var mod *module.Tree
 	if plan == nil {
-		mod, err = c.Module(configPath)
-		if err != nil {
-			err = errwrap.Wrapf("Failed to load root config module: {{err}}", err)
-			c.showDiagnostics(err)
+		var modDiags tfdiags.Diagnostics
+		mod, modDiags = c.Module(configPath)
+		diags = diags.Append(modDiags)
+		if modDiags.HasErrors() {
+			c.showDiagnostics(diags)
 			return 1
 		}
 	}
@@ -98,38 +100,28 @@ func (c *PlanCommand) Run(args []string) int {
 	opReq := c.Operation()
 	opReq.Destroy = destroy
 	opReq.Module = mod
+	opReq.ModuleDepth = moduleDepth
 	opReq.Plan = plan
-	opReq.PlanRefresh = refresh
 	opReq.PlanOutPath = outPath
+	opReq.PlanRefresh = refresh
 	opReq.Type = backend.OperationTypePlan
 
 	// Perform the operation
-	op, err := b.Operation(context.Background(), opReq)
+	op, err := c.RunOperation(b, opReq)
 	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error starting operation: %s", err))
-		return 1
+		diags = diags.Append(err)
 	}
 
-	// Wait for the operation to complete
-	<-op.Done()
-	if err := op.Err; err != nil {
-		c.showDiagnostics(err)
+	c.showDiagnostics(diags)
+	if diags.HasErrors() {
 		return 1
 	}
-
-	/*
-		err = terraform.SetDebugInfo(DefaultDataDir)
-		if err != nil {
-			c.Ui.Error(err.Error())
-			return 1
-		}
-	*/
 
 	if detailed && !op.PlanEmpty {
 		return 2
 	}
 
-	return 0
+	return op.ExitCode
 }
 
 func (c *PlanCommand) Help() string {

@@ -45,6 +45,15 @@ func (p *resetProvider) TestReset() error {
 	return p.TestResetError
 }
 
+func TestParallelTest(t *testing.T) {
+	mt := new(mockT)
+	ParallelTest(mt, TestCase{})
+
+	if !mt.ParallelCalled {
+		t.Fatal("Parallel() not called")
+	}
+}
+
 func TestTest(t *testing.T) {
 	mp := &resetProvider{
 		MockResourceProvider: testProvider(),
@@ -111,6 +120,9 @@ func TestTest(t *testing.T) {
 
 	if mt.failed() {
 		t.Fatalf("test failed: %s", mt.failMessage())
+	}
+	if mt.ParallelCalled {
+		t.Fatal("Parallel() called")
 	}
 	if !checkStep {
 		t.Fatal("didn't call check for step")
@@ -520,6 +532,99 @@ func TestTest_resetError(t *testing.T) {
 	}
 }
 
+func TestTest_expectError(t *testing.T) {
+	cases := []struct {
+		name     string
+		planErr  bool
+		applyErr bool
+		badErr   bool
+	}{
+		{
+			name:     "successful apply",
+			planErr:  false,
+			applyErr: false,
+		},
+		{
+			name:     "bad plan",
+			planErr:  true,
+			applyErr: false,
+		},
+		{
+			name:     "bad apply",
+			planErr:  false,
+			applyErr: true,
+		},
+		{
+			name:     "bad plan, bad err",
+			planErr:  true,
+			applyErr: false,
+			badErr:   true,
+		},
+		{
+			name:     "bad apply, bad err",
+			planErr:  false,
+			applyErr: true,
+			badErr:   true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			mp := testProvider()
+			expectedText := "test provider error"
+			var errText string
+			if tc.badErr {
+				errText = "wrong provider error"
+			} else {
+				errText = expectedText
+			}
+			noErrText := "no error received, but expected a match to"
+			if tc.planErr {
+				mp.DiffReturnError = errors.New(errText)
+			}
+			if tc.applyErr {
+				mp.ApplyReturnError = errors.New(errText)
+			}
+			mt := new(mockT)
+			Test(mt, TestCase{
+				Providers: map[string]terraform.ResourceProvider{
+					"test": mp,
+				},
+				Steps: []TestStep{
+					TestStep{
+						Config:             testConfigStr,
+						ExpectError:        regexp.MustCompile(expectedText),
+						Check:              func(*terraform.State) error { return nil },
+						ExpectNonEmptyPlan: true,
+					},
+				},
+			},
+			)
+			if mt.FatalCalled {
+				t.Fatalf("fatal: %+v", mt.FatalArgs)
+			}
+			switch {
+			case len(mt.ErrorArgs) < 1 && !tc.planErr && !tc.applyErr:
+				t.Fatalf("expected error, got none")
+			case !tc.planErr && !tc.applyErr:
+				for _, e := range mt.ErrorArgs {
+					if regexp.MustCompile(noErrText).MatchString(fmt.Sprintf("%v", e)) {
+						return
+					}
+				}
+				t.Fatalf("expected error to match %s, got %+v", noErrText, mt.ErrorArgs)
+			case tc.badErr:
+				for _, e := range mt.ErrorArgs {
+					if regexp.MustCompile(expectedText).MatchString(fmt.Sprintf("%v", e)) {
+						return
+					}
+				}
+				t.Fatalf("expected error to match %s, got %+v", expectedText, mt.ErrorArgs)
+			}
+		})
+	}
+}
+
 func TestComposeAggregateTestCheckFunc(t *testing.T) {
 	check1 := func(s *terraform.State) error {
 		return errors.New("Error 1")
@@ -599,12 +704,13 @@ func TestComposeTestCheckFunc(t *testing.T) {
 
 // mockT implements TestT for testing
 type mockT struct {
-	ErrorCalled bool
-	ErrorArgs   []interface{}
-	FatalCalled bool
-	FatalArgs   []interface{}
-	SkipCalled  bool
-	SkipArgs    []interface{}
+	ErrorCalled    bool
+	ErrorArgs      []interface{}
+	FatalCalled    bool
+	FatalArgs      []interface{}
+	ParallelCalled bool
+	SkipCalled     bool
+	SkipArgs       []interface{}
 
 	f bool
 }
@@ -619,6 +725,10 @@ func (t *mockT) Fatal(args ...interface{}) {
 	t.FatalCalled = true
 	t.FatalArgs = args
 	t.f = true
+}
+
+func (t *mockT) Parallel() {
+	t.ParallelCalled = true
 }
 
 func (t *mockT) Skip(args ...interface{}) {
@@ -816,6 +926,85 @@ func TestTest_Main(t *testing.T) {
 
 func mockSweeperFunc(s string) error {
 	return nil
+}
+
+func TestTest_Taint(t *testing.T) {
+	mp := testProvider()
+	mp.DiffFn = func(
+		_ *terraform.InstanceInfo,
+		state *terraform.InstanceState,
+		_ *terraform.ResourceConfig,
+	) (*terraform.InstanceDiff, error) {
+		return &terraform.InstanceDiff{
+			DestroyTainted: state.Tainted,
+		}, nil
+	}
+
+	mp.ApplyFn = func(
+		info *terraform.InstanceInfo,
+		state *terraform.InstanceState,
+		diff *terraform.InstanceDiff,
+	) (*terraform.InstanceState, error) {
+		var id string
+		switch {
+		case diff.Destroy && !diff.DestroyTainted:
+			return nil, nil
+		case diff.DestroyTainted:
+			id = "tainted"
+		default:
+			id = "not_tainted"
+		}
+
+		return &terraform.InstanceState{
+			ID: id,
+		}, nil
+	}
+
+	mp.RefreshFn = func(
+		_ *terraform.InstanceInfo,
+		state *terraform.InstanceState,
+	) (*terraform.InstanceState, error) {
+		return state, nil
+	}
+
+	mt := new(mockT)
+	Test(mt, TestCase{
+		Providers: map[string]terraform.ResourceProvider{
+			"test": mp,
+		},
+		Steps: []TestStep{
+			TestStep{
+				Config: testConfigStr,
+				Check: func(s *terraform.State) error {
+					rs := s.RootModule().Resources["test_instance.foo"]
+					if rs.Primary.ID != "not_tainted" {
+						return fmt.Errorf("expected not_tainted, got %s", rs.Primary.ID)
+					}
+					return nil
+				},
+			},
+			TestStep{
+				Taint:  []string{"test_instance.foo"},
+				Config: testConfigStr,
+				Check: func(s *terraform.State) error {
+					rs := s.RootModule().Resources["test_instance.foo"]
+					if rs.Primary.ID != "tainted" {
+						return fmt.Errorf("expected tainted, got %s", rs.Primary.ID)
+					}
+					return nil
+				},
+			},
+			TestStep{
+				Taint:       []string{"test_instance.fooo"},
+				Config:      testConfigStr,
+				ExpectError: regexp.MustCompile("resource \"test_instance.fooo\" not found in state"),
+			},
+		},
+	})
+
+	if mt.failed() {
+		t.Fatalf("test failure: %s", mt.failMessage())
+	}
 }
 
 const testConfigStr = `
