@@ -19,6 +19,9 @@ func Provider() *schema.Provider {
 			"jira_project":          resourceProject(),
 			"jira_webhook":          resourceWebhook(),
 		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"jira_jql": resourceJQL(),
+		},
 		ConfigureFunc: providerConfigure,
 	}
 }

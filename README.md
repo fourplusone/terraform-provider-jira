@@ -2,7 +2,13 @@
 
 [![Build Status](https://travis-ci.com/fourplusone/terraform-provider-jira.svg?branch=master)](https://travis-ci.com/fourplusone/terraform-provider-jira)
 
-Terraform Provider for managing JIRA. Supports
+Terraform Provider for managing JIRA. 
+
+## Data Sources
+
+- Issue Keys from JQL
+
+## Resources
 
 - Comments
 - Groups
@@ -122,6 +128,10 @@ resource "jira_webhook" "demo_hook" {
   events = ["jira:issue_created"]
 }
 
+
+data "jira_jql" "issues" {
+  jql = "project = ${jira_project.project_a.key} ORDER BY key ASC"
+}
 
 ```
 
