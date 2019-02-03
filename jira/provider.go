@@ -18,6 +18,7 @@ func Provider() *schema.Provider {
 			"jira_issue_link_type":  resourceIssueLinkType(),
 			"jira_project":          resourceProject(),
 			"jira_webhook":          resourceWebhook(),
+			"jira_role":             resourceRole(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"jira_jql": resourceJQL(),
