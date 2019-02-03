@@ -9,16 +9,17 @@ import (
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
-			"jira_comment":          resourceComment(),
-			"jira_group":            resourceGroup(),
-			"jira_group_membership": resourceGroupMembership(),
-			"jira_issue":            resourceIssue(),
-			"jira_issue_link":       resourceIssueLink(),
-			"jira_issue_type":       resourceIssueType(),
-			"jira_issue_link_type":  resourceIssueLinkType(),
-			"jira_project":          resourceProject(),
-			"jira_webhook":          resourceWebhook(),
-			"jira_role":             resourceRole(),
+			"jira_comment":            resourceComment(),
+			"jira_group":              resourceGroup(),
+			"jira_group_membership":   resourceGroupMembership(),
+			"jira_issue":              resourceIssue(),
+			"jira_issue_link":         resourceIssueLink(),
+			"jira_issue_type":         resourceIssueType(),
+			"jira_issue_link_type":    resourceIssueLinkType(),
+			"jira_project":            resourceProject(),
+			"jira_project_membership": resourceProjectMembership(),
+			"jira_webhook":            resourceWebhook(),
+			"jira_role":               resourceRole(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"jira_jql": resourceJQL(),

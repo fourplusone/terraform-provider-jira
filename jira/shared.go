@@ -1,6 +1,7 @@
 package jira
 
 import (
+	"fmt"
 	"io/ioutil"
 	"reflect"
 
@@ -19,6 +20,10 @@ const issueTypeAPIEndpoint = "/rest/api/2/issuetype"
 const projectAPIEndpoint = "/rest/api/2/project"
 const roleAPIEndpoint = "/rest/api/2/role"
 const webhookAPIEndpoint = "/rest/webhooks/1.0/webhook"
+
+func projectRoleAPIEndpoint(projectKey string) string {
+	return fmt.Sprintf("/rest/api/2/project/%s/role", projectKey)
+}
 
 func request(client *jira.Client, method string, endpoint string, in interface{}, out interface{}) error {
 
