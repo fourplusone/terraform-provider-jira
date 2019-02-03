@@ -18,6 +18,7 @@ Terraform Provider for managing JIRA.
 - Issue Types
 - Issue Link Types
 - Projects
+- Project Categories
 - Project Roles
 - Roles
 - Webhooks
@@ -98,6 +99,11 @@ resource "jira_issue_link" "linked" {
   link_type = "${jira_issue_link_type.blocks.id}"
 }
 
+resource "jira_project_category" "categroy" {
+  name = "Managed"
+  description = "Managed Projects"
+}
+
 resource "jira_project" "project_a" {
   key = "TRF"
   name = "Terraform"
@@ -106,6 +112,7 @@ resource "jira_project" "project_a" {
   lead = "bot"
   permission_scheme = 10400
   notification_scheme = 10300
+  category_id = "${jira_project_category.category.id}"
 }
 
 

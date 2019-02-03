@@ -18,6 +18,7 @@ const issueLinkTypeAPIEndpoint = "/rest/api/2/issueLinkType"
 const issueTypeAPIEndpoint = "/rest/api/2/issuetype"
 
 const projectAPIEndpoint = "/rest/api/2/project"
+const projectCategoryAPIEndpoint = "/rest/api/2/projectCategory"
 const roleAPIEndpoint = "/rest/api/2/role"
 const webhookAPIEndpoint = "/rest/webhooks/1.0/webhook"
 
