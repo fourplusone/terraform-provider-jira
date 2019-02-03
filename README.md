@@ -18,6 +18,7 @@ Terraform Provider for managing JIRA.
 - Issue Types
 - Issue Link Types
 - Projects
+- Project Roles
 - Roles
 - Webhooks
 
@@ -123,6 +124,20 @@ resource "jira_group_membership" "gm_1" {
 resource "jira_role" "role" {
   name = "Project Manager"
   description = "The Project Managers"
+}
+
+// Grant Project Access to user "bot" 
+resource "jira_project_membership" "member" {
+  project_key = "${jira_project.project_a.key}"
+  role_id = "${jira_role.role.id}"
+  username = "bot"
+}
+
+// Grant Project Access to group "bot" 
+resource "jira_project_membership" "group_member" {
+  project_key = "${jira_project.project_a.key}"
+  role_id = "${jira_role.role.id}"
+  group = "${jira_group.tf_group.name}"
 }
 
 
