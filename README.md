@@ -11,6 +11,7 @@ Terraform Provider for managing JIRA.
 ## Resources
 
 - Comments
+- Filters
 - Groups
 - Group Memberships
 - Issues
@@ -97,6 +98,15 @@ resource "jira_issue_link" "linked" {
   inward_key = "${jira_issue.example.issue_key}"
   outward_key = "${jira_issue.another_example.issue_key}"
   link_type = "${jira_issue_link_type.blocks.id}"
+}
+
+resource "jira_filter" "filter" {
+  name = "Simple Filter"
+  jql = "project = PROJ"
+
+  // Optional Fields
+  description = "All Issues in PROJ"
+  favourite = false
 }
 
 resource "jira_project_category" "categroy" {
