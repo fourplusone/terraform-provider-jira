@@ -54,7 +54,18 @@ func resourceIssue() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-
+			"state": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"state_transition": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"delete_transition": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			// Computed values
 			"issue_key": &schema.Schema{
 				Type:     schema.TypeString,
@@ -105,6 +116,24 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 		return errors.Wrapf(err, "creating jira issue failed: %s", body)
 	}
 
+	issue, res, err = config.jiraClient.Issue.Get(issue.ID, nil)
+	if err != nil {
+		body, _ := ioutil.ReadAll(res.Body)
+		return errors.Wrapf(err, "getting jira issue failed: %s", body)
+	}
+
+	if state, ok := d.GetOk("state"); ok {
+		if issue.Fields.Status.ID != state.(string) {
+			if transition, ok := d.GetOk("state_transition"); ok {
+				res, err := config.jiraClient.Issue.DoTransition(issue.ID, transition.(string))
+				if err != nil {
+					body, _ := ioutil.ReadAll(res.Body)
+					return errors.Wrapf(err, "transitioning jira issue failed: %s", body)
+				}
+			}
+		}
+	}
+
 	d.SetId(issue.ID)
 
 	return resourceIssueRead(d, m)
@@ -135,6 +164,7 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("summary", issue.Fields.Summary)
 	d.Set("project_key", issue.Fields.Project.Key)
 	d.Set("issue_key", issue.Key)
+	d.Set("state", issue.Fields.Status.ID)
 
 	return nil
 }
@@ -142,8 +172,8 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 // resourceIssueUpdate updates jira issue using jira api
 func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
-	assignee := d.Get("assignee").(string)
-	reporter := d.Get("reporter").(string)
+	assignee := d.Get("assignee")
+	reporter := d.Get("reporter")
 	issueType := d.Get("issue_type").(string)
 	description := d.Get("description").(string)
 	summary := d.Get("summary").(string)
@@ -154,12 +184,6 @@ func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 		Key: issueKey,
 		ID:  d.Id(),
 		Fields: &jira.IssueFields{
-			Assignee: &jira.User{
-				Name: assignee,
-			},
-			Reporter: &jira.User{
-				Name: reporter,
-			},
 			Description: description,
 			Type: jira.IssueType{
 				Name: issueType,
@@ -170,10 +194,41 @@ func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 			Summary: summary,
 		},
 	}
+
+	if assignee != "" {
+		i.Fields.Assignee = &jira.User{
+			Name: assignee.(string),
+		}
+	}
+
+	if reporter != "" {
+		i.Fields.Reporter = &jira.User{
+			Name: reporter.(string),
+		}
+	}
+
 	issue, res, err := config.jiraClient.Issue.Update(&i)
 	if err != nil {
 		body, _ := ioutil.ReadAll(res.Body)
 		return errors.Wrapf(err, "updating jira issue failed: %s", body)
+	}
+
+	issue, res, err = config.jiraClient.Issue.Get(issue.ID, nil)
+	if err != nil {
+		body, _ := ioutil.ReadAll(res.Body)
+		return errors.Wrapf(err, "getting jira issue failed: %s", body)
+	}
+
+	if state, ok := d.GetOk("state"); ok {
+		if issue.Fields.Status.ID != state.(string) {
+			if transition, ok := d.GetOk("state_transition"); ok {
+				res, err := config.jiraClient.Issue.DoTransition(issue.ID, transition.(string))
+				if err != nil {
+					body, _ := ioutil.ReadAll(res.Body)
+					return errors.Wrapf(err, "transitioning jira issue failed: %s", body)
+				}
+			}
+		}
 	}
 
 	d.SetId(issue.ID)
@@ -187,10 +242,21 @@ func resourceIssueDelete(d *schema.ResourceData, m interface{}) error {
 
 	id := d.Id()
 
-	res, err := config.jiraClient.Issue.Delete(id)
-	if err != nil {
-		body, _ := ioutil.ReadAll(res.Body)
-		return errors.Wrapf(err, "deleting jira issue failed: %s", body)
+	if transition, ok := d.GetOk("delete_transition"); ok {
+		res, err := config.jiraClient.Issue.DoTransition(id, transition.(string))
+		if err != nil {
+			body, _ := ioutil.ReadAll(res.Body)
+			return errors.Wrapf(err, "deleting jira issue failed: %s", body)
+		}
+
+	} else {
+		res, err := config.jiraClient.Issue.Delete(id)
+
+		if err != nil {
+			body, _ := ioutil.ReadAll(res.Body)
+			return errors.Wrapf(err, "deleting jira issue failed: %s", body)
+		}
 	}
+
 	return nil
 }

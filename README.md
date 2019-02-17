@@ -80,7 +80,15 @@ resource "jira_issue" "example" {
   summary     = "Created using Terraform"
 
   // description is optional  
-  description = "This is a test issue"  
+  description = "This is a test issue" 
+
+  // (optional) Instead of deleting the issue, perform this transition 
+  delete_transition = 21
+
+  // (optional) Make sure, the issue is in the desired state
+  // using state_transition
+  state = 10000
+  state_transition = 31 
 }
 
 resource "jira_comment" "example_comment" {
