@@ -3,6 +3,8 @@ go:
 - 1.12
 os:
 - linux
+env:
+- GO111MODULE=on
 script:
 - make release
 deploy:
