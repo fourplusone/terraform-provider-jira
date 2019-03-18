@@ -27,6 +27,11 @@ func projectRoleAPIEndpoint(projectKey string) string {
 	return fmt.Sprintf("/rest/api/2/project/%s/role", projectKey)
 }
 
+func filterPermissionEndpoint(filterID string) string {
+	return fmt.Sprintf("%s/%s/permission", filterAPIEndpoint, filterID)
+
+}
+
 func request(client *jira.Client, method string, endpoint string, in interface{}, out interface{}) error {
 
 	req, err := client.NewRequest(method, endpoint, in)

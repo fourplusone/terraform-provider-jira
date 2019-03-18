@@ -11,7 +11,7 @@ Terraform Provider for managing JIRA.
 ## Resources
 
 - Comments
-- Filters
+- Filters & Filter Permissions
 - Groups
 - Group Memberships
 - Issues
@@ -115,6 +115,18 @@ resource "jira_filter" "filter" {
   // Optional Fields
   description = "All Issues in PROJ"
   favourite = false
+
+  // All Members of project with ID 13102
+  permissions {
+    type = "project"
+    project_id = "13102"
+  }
+
+  // All Members of Group "Team A"
+  permissions {
+    type = "group"
+    group_name = "Team A"
+  }
 }
 
 resource "jira_project_category" "categroy" {
