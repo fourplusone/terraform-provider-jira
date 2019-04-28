@@ -3,7 +3,6 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.12
-      - image: fourplusone/docker-atlas:jira-latest
 
     steps:
       - checkout
@@ -11,6 +10,15 @@ jobs:
       - run:
           name: Build
           command: make release
+  
+  test:
+    docker:
+      - image: circleci/golang:1.12
+      - image: fourplusone/docker-atlas:jira-latest
+
+    steps:
+      - checkout
+
       - run:
           name: Wait for JIRA
           command: |
@@ -31,6 +39,7 @@ jobs:
   publish-github-release:
     requires:
       - build
+      - test
     filters:
       branches:
         ignore: /.*/
