@@ -1,4 +1,6 @@
 PKG := $(shell go list ./... | grep -v vendor)
+TEST := $(shell go list ./... |grep -v vendor)
+
 
 .PHONY: test
 
@@ -17,4 +19,4 @@ release: ## Build the go binaries for various platform
 	./scripts/release.sh
 
 test: ## Run tests
-	go test .
+	TF_ACC=1 go test -v $(TEST)

@@ -1,13 +1,15 @@
 #!/bin/bash
 
 # define architecture we want to build
-XC_ARCH=${XC_ARCH:-"386 amd64"}
-XC_OS=${XC_OS:-linux darwin windows}
-XC_EXCLUDE_OSARCH="!darwin/386"
+XC_ARCH=${XC_ARCH:-"386 amd64 arm"}
+XC_OS=${XC_OS:-linux darwin windows freebsd openbsd solaris}
+XC_EXCLUDE_OSARCH="!darwin/arm !darwin/386"
 
 # clean up
 echo "-> running clean up...."
 rm -rf output/*
+rm -rf artifacts/*
+
 
 if ! which gox > /dev/null; then
     echo "-> installing gox..."
@@ -28,12 +30,13 @@ gox \
 # Zip and copy to the dist dir
 echo ""
 echo "Packaging..."
+mkdir artifacts
 for PLATFORM in $(find ./output -mindepth 1 -maxdepth 1 -type d); do
     OSARCH=$(basename ${PLATFORM})
     echo "--> ${OSARCH}"
 
     pushd $PLATFORM >/dev/null 2>&1
-    zip ../terraform-provider-jira_${OSARCH}.zip ./*
+    zip ../../artifacts/terraform-provider-jira_${OSARCH}.zip ./*
     popd >/dev/null 2>&1
 done
 

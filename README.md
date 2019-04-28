@@ -1,6 +1,6 @@
 # terraform-provider-jira
 
-[![Build Status](https://travis-ci.com/fourplusone/terraform-provider-jira.svg?branch=master)](https://travis-ci.com/fourplusone/terraform-provider-jira)
+[![CircleCI](https://circleci.com/gh/fourplusone/terraform-provider-jira.svg?style=svg)](https://circleci.com/gh/fourplusone/terraform-provider-jira)
 
 Terraform Provider for managing JIRA. 
 

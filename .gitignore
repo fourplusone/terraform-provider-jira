@@ -1,5 +1,7 @@
 terraform-provider-jira
 .DS_Store
 output/
+artifacts/
 .terraform/
 .terraform.d
+vendor/
