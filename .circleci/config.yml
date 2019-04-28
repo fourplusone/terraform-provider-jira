@@ -10,8 +10,7 @@ jobs:
 
       - run:
           name: Build
-          command: |
-            - make release
+          command: make release
       - run:
           name: Wait for JIRA
           command: |
