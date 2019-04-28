@@ -6,7 +6,15 @@ workflows:
     jobs:
         - build
         - test
-        - publish-github-release
+        - publish-github-release:
+            requires:
+              - build
+              - test
+            filters:
+              branches:
+                ignore: /.*/
+              tags:
+                only: /^v\d+\.\d+\.\d+$/
 jobs:
   build:
     docker:
@@ -45,14 +53,6 @@ jobs:
             make test
 
   publish-github-release:
-    requires:
-      - build
-      - test
-    filters:
-      branches:
-        ignore: /.*/
-      tags:
-        only: /^v\d+\.\d+\.\d+$/
     docker:
       - image: circleci/golang:1.8
     steps:
