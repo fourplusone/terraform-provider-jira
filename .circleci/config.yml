@@ -1,0 +1,30 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.12
+      - image: fourplusone/docker-atlas:jira-latest
+
+    steps:
+      - checkout
+
+      - run:
+          name: Build
+          command: |
+            - make release
+      - run:
+          name: Wait for JIRA
+          command: |
+            while :
+            do
+            curl http://localhost:2990/jira && break;
+            sleep 10
+            done
+      - run:
+          name: Testing
+          environment: 
+            JIRA_URL: http://localhost:2990/jira/
+            JIRA_USER: admin
+            JIRA_PASSWORD: admin
+          command: |
+            make test
