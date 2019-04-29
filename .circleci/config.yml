@@ -32,18 +32,18 @@ workflows:
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.12
-      
-    persist_to_workspace:
-      root: .
-      paths:
-        - artifacts        
+      - image: circleci/golang:1.12     
     steps:
       - checkout
 
       - run:
           name: Build
           command: make release
+          
+      - persist_to_workspace:
+          root: .
+          paths:
+            - artifacts   
   
   test:
     docker:
