@@ -2,19 +2,29 @@ version: 2
 
 workflows:
   version: 2
+  release:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
+      - test:
+          filters:  
+            tags:
+              only: /.*/
+      - publish-github-release:
+          requires:
+            - build
+            - test
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
   build:
     jobs:
         - build
         - test
-        - publish-github-release:
-            requires:
-              - build
-              - test
-            filters:
-              branches:
-                ignore: /.*/
-              tags:
-                only: /^v\d+\.\d+\.\d+$/
 jobs:
   build:
     docker:
