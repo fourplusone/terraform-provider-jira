@@ -33,7 +33,11 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.12
-
+      
+    persist_to_workspace:
+      root: .
+      paths:
+        - artifacts        
     steps:
       - checkout
 
