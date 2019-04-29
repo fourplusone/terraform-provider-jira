@@ -22,6 +22,7 @@ Terraform Provider for managing JIRA.
 - Project Categories
 - Project Roles
 - Roles
+- Users
 - Webhooks
 
 This can be used to interlink infrastructure management with JIRA issues closely.
@@ -177,6 +178,11 @@ resource "jira_project_membership" "group_member" {
   group = "${jira_group.tf_group.name}"
 }
 
+resource "jira_user" "demo_user" {
+  name = "bot"
+  email = "bot@example.org"
+  display_name = "The Bot"
+}
 
 resource "jira_webhook" "demo_hook" {
   name = "Terraform Hook"
