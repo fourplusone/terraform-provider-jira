@@ -7,11 +7,15 @@ workflows:
       - build:
           filters:
             tags:
-              only: /.*/
+              only: /^v.*/
+            branches:
+              ignore: /.*/
       - test:
-          filters:  
+          filters:
             tags:
-              only: /.*/
+              only: /^v.*/
+            branches:
+              ignore: /.*/
       - publish-github-release:
           requires:
             - build
