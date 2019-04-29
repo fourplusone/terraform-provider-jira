@@ -2,16 +2,11 @@ package jira
 
 import (
 	"io/ioutil"
-	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/pkg/errors"
 )
-
-func caseInsensitiveSuppressFunc(k, old, new string, d *schema.ResourceData) bool {
-	return strings.ToLower(old) == strings.ToLower(new)
-}
 
 // resourceIssue is used to define a JIRA issue
 func resourceIssue() *schema.Resource {

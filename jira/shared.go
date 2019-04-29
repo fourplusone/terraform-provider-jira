@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
+	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
+	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/pkg/errors"
 )
 
@@ -56,4 +58,8 @@ func request(client *jira.Client, method string, endpoint string, in interface{}
 	}
 
 	return nil
+}
+
+func caseInsensitiveSuppressFunc(k, old, new string, d *schema.ResourceData) bool {
+	return strings.ToLower(old) == strings.ToLower(new)
 }
