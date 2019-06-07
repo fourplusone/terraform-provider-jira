@@ -235,6 +235,26 @@ Run `terraform apply`
 terraform apply
 ```
 
+## Building 
+
+If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine.
+
+*Note:* This project uses [Go Modules](https://blog.golang.org/using-go-modules) making it safe to work with it outside of your existing [GOPATH](http://golang.org/doc/code.html#GOPATH). The instructions that follow assume a directory in your home directory outside of the standard GOPATH (i.e `$HOME/development/terraform-providers/`).
+
+Clone repository to: `$HOME/development/terraform-providers/`
+
+```sh
+$ mkdir -p $HOME/development/terraform-providers/; cd $HOME/development/terraform-providers/
+$ git clone git@github.com:fourplusone/terraform-provider-jira
+...
+```
+
+Enter the provider directory and run `make build` to build the provider
+
+```sh
+$ make build
+```
+
 ## Rationale
 Working in Operations engineering organizations infrastructure is often driven by tickets. Why not track infrastructure using tickets but this time we will use code.
 This just showcases that you can pretty much Terraform anything!
