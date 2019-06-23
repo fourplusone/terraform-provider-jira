@@ -29,6 +29,15 @@ This can be used to interlink infrastructure management with JIRA issues closely
 
 ![terraform-provider-jira demo](./images/terraform-provider-jira.gif)
 
+## Compatibility 
+
+
+| Version | Status       |  
+|---------|--------------|
+| Latest  | Tested in CI |
+| 7.x     | Untested     |
+| Cloud   | Untested     |   
+
 ## Install
 
 * Download `terraform-provider-jira` binary from [Github](https://github.com/fourplusone/terraform-provider-jira/releases)
