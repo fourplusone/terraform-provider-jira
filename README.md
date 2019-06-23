@@ -59,6 +59,14 @@ export JIRA_USER=username
 export JIRA_PASSWORD=password
 ```
 
+It's also possible to use an API-Token from JIRA cloud. In this case, set 
+
+```bash
+export JIRA_URL=https://yourinstance.atlassian.net
+export JIRA_USER=username@example.org
+export JIRA_PASSWORD=<API-Key>
+```
+
 Create terraform config file
 
 ```hcl
