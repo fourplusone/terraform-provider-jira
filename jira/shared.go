@@ -49,7 +49,7 @@ func request(client *jira.Client, method string, endpoint string, in interface{}
 	res, err := client.Do(req, out)
 	if err != nil {
 
-		if in != nil {
+		if in != nil && res != nil {
 			typeName := reflect.TypeOf(in).Name()
 			body, readErr := ioutil.ReadAll(res.Response.Body)
 			if readErr != nil {
