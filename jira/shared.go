@@ -25,6 +25,10 @@ const projectCategoryAPIEndpoint = "/rest/api/2/projectCategory"
 const roleAPIEndpoint = "/rest/api/2/role"
 const webhookAPIEndpoint = "/rest/webhooks/1.0/webhook"
 
+func projectWithSharedConfigurationAPIEndpoint(projectID int) string {
+	return fmt.Sprintf("/rest/project-templates/1.0/createshared/%d", projectID)
+}
+
 func projectRoleAPIEndpoint(projectKey string) string {
 	return fmt.Sprintf("/rest/api/2/project/%s/role", projectKey)
 }

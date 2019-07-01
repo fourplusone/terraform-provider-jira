@@ -26,6 +26,10 @@ type ProjectRequest struct {
 	CategoryID          int    `json:"categoryId,omitempty" structs:"categoryId,omitempty"`
 }
 
+type SharedConfigurationProjectResponse struct {
+	ProjectID int `json:"projectId,omitempty"`
+}
+
 // IDResponse The struct sent from the JIRA instance after creating a new Project
 type IDResponse struct {
 	ID int `json:"id,omitempty" structs:"id,omitempty"`
@@ -60,6 +64,10 @@ func resourceProject() *schema.Resource {
 		Delete: resourceProjectDelete,
 
 		Schema: map[string]*schema.Schema{
+			"project_id": &schema.Schema{
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 			"key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -68,13 +76,18 @@ func resourceProject() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"shared_configuration_project_id": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+				ForceNew: true,
+			},
 			"project_type_key": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 			"project_template_key": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 			"description": &schema.Schema{
 				Type:     schema.TypeString,
@@ -121,30 +134,58 @@ func resourceProject() *schema.Resource {
 func resourceProjectCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
-	project := &ProjectRequest{
-		Key:                 d.Get("key").(string),
-		Name:                d.Get("name").(string),
-		ProjectTypeKey:      d.Get("project_type_key").(string),
-		ProjectTemplateKey:  d.Get("project_template_key").(string),
-		Description:         d.Get("description").(string),
-		Lead:                d.Get("lead").(string),
-		URL:                 d.Get("url").(string),
-		AssigneeType:        d.Get("assignee_type").(string),
-		AvatarID:            d.Get("avatar_id").(int),
-		IssueSecurityScheme: d.Get("issue_security_scheme").(int),
-		PermissionScheme:    d.Get("permission_scheme").(int),
-		NotificationScheme:  d.Get("notification_scheme").(int),
-		CategoryID:          d.Get("category_id").(int),
+	sharedProjectID, useSharedConfiguration := d.GetOk("shared_configuration_project_id")
+	if useSharedConfiguration {
+		project := &ProjectRequest{
+			Key:  d.Get("key").(string),
+			Name: d.Get("name").(string),
+			Lead: d.Get("lead").(string),
+		}
+
+		returnedProject := new(SharedConfigurationProjectResponse)
+
+		endpoint := projectWithSharedConfigurationAPIEndpoint(sharedProjectID.(int))
+
+		err := request(config.jiraClient, "POST", endpoint, project, returnedProject)
+
+		if err != nil {
+			return errors.Wrap(err, "Request failed")
+		}
+
+		d.SetId(strconv.Itoa(returnedProject.ProjectID))
+
+		err = resourceProjectUpdate(d, m)
+
+		if err != nil {
+			return errors.Wrap(err, "Request failed")
+		}
+
+	} else {
+		project := &ProjectRequest{
+			Key:                 d.Get("key").(string),
+			Name:                d.Get("name").(string),
+			ProjectTypeKey:      d.Get("project_type_key").(string),
+			ProjectTemplateKey:  d.Get("project_template_key").(string),
+			Description:         d.Get("description").(string),
+			Lead:                d.Get("lead").(string),
+			URL:                 d.Get("url").(string),
+			AssigneeType:        d.Get("assignee_type").(string),
+			AvatarID:            d.Get("avatar_id").(int),
+			IssueSecurityScheme: d.Get("issue_security_scheme").(int),
+			PermissionScheme:    d.Get("permission_scheme").(int),
+			NotificationScheme:  d.Get("notification_scheme").(int),
+			CategoryID:          d.Get("category_id").(int),
+		}
+
+		returnedProject := new(IDResponse)
+
+		err := request(config.jiraClient, "POST", projectAPIEndpoint, project, returnedProject)
+		if err != nil {
+			return errors.Wrap(err, "Request failed")
+		}
+
+		d.SetId(strconv.Itoa(returnedProject.ID))
 	}
-
-	returnedProject := new(IDResponse)
-
-	err := request(config.jiraClient, "POST", projectAPIEndpoint, project, returnedProject)
-	if err != nil {
-		return errors.Wrap(err, "Request failed")
-	}
-
-	d.SetId(strconv.Itoa(returnedProject.ID))
 
 	return resourceProjectRead(d, m)
 
@@ -159,6 +200,8 @@ func resourceProjectRead(d *schema.ResourceData, m interface{}) error {
 		return errors.Wrap(err, "getting jira project failed")
 	}
 
+	id, _ := strconv.Atoi(d.Id())
+	d.Set("project_id", id)
 	d.Set("key", project.Key)
 	d.Set("name", project.Name)
 	d.Set("description", project.Description)

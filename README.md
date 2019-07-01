@@ -163,6 +163,14 @@ resource "jira_project" "project_a" {
   category_id = "${jira_project_category.category.id}"
 }
 
+// Create a Project with a shared configuration
+resource "jira_project" "project_shared" {
+	key = "SHARED"
+	name = "Project (with shared config)"
+	lead = "bot"
+	shared_configuration_project_id = "${jira_project.project_a.project_id}"
+}
+
 
 // Create a group named "Terraform Managed"
 resource "jira_group" "tf_group" {
