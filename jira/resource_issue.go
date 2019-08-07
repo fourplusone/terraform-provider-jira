@@ -52,6 +52,12 @@ func resourceIssue() *schema.Resource {
 			"state": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					if new == "" {
+						return true
+					}
+					return old == new
+				},
 			},
 			"state_transition": &schema.Schema{
 				Type:     schema.TypeString,
