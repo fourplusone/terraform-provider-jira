@@ -79,6 +79,13 @@ export JIRA_PASSWORD=<API-Key>
 Create terraform config file
 
 ```hcl
+
+provider "jira" {
+  url = "https://myjira.atlassian.net" # Can also be set using the JIRA_URL environment variable
+  # user = "xxxx"                      # Can also be set using the JIRA_USER environment variable
+  # password = "xxxx"                  # Can also be set using the JIRA_PASSWORD environment variable
+}
+
 // The types will be globally available in JIRA
 resource "jira_issue_type" "task" {
   description = "A Task.",
