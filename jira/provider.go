@@ -8,6 +8,27 @@ import (
 // Provider returns a terraform.ResourceProvider
 func Provider() *schema.Provider {
 	return &schema.Provider{
+		Schema: map[string]*schema.Schema{
+			"url": {
+				Type:        schema.TypeString,
+				Required:    true,
+				DefaultFunc: schema.EnvDefaultFunc("JIRA_URL", nil),
+				Description: "Base url of the JIRA instance.",
+			},
+			"user": {
+				Type:        schema.TypeString,
+				Required:    true,
+				DefaultFunc: schema.EnvDefaultFunc("JIRA_USER", nil),
+				Description: "User to be used",
+			},
+			"password": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Sensitive:   true,
+				DefaultFunc: schema.EnvDefaultFunc("JIRA_PASSWORD", nil),
+				Description: "Password/API Key of the user",
+			},
+		},
 		ResourcesMap: map[string]*schema.Resource{
 			"jira_comment":            resourceComment(),
 			"jira_filter":             resourceFilter(),
@@ -34,7 +55,7 @@ func Provider() *schema.Provider {
 // providerConfigure configures the provider by creating and authenticating JIRA client
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	var c Config
-	if err := c.createAndAuthenticateClient(); err != nil {
+	if err := c.createAndAuthenticateClient(d); err != nil {
 		return nil, errors.Wrap(err, "creating config failed")
 	}
 	return &c, nil
