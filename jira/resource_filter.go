@@ -89,8 +89,10 @@ func resourceFilter() *schema.Resource {
 							ValidateFunc: func(v interface{}, s string) ([]string, []error) {
 								if !(v.(string) == "global" ||
 									v.(string) == "group" ||
-									v.(string) == "project") {
-									return nil, []error{fmt.Errorf("type needs to be one of global, group or project")}
+									v.(string) == "project" ||
+									v.(string) == "project_role" ||
+									v.(string) == "authenticated") {
+									return nil, []error{fmt.Errorf("type needs to be one of global, group, project, project_role or authenticated")}
 								}
 								return nil, nil
 							},
@@ -109,6 +111,7 @@ func resourceFilter() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
+
 						"id": &schema.Schema{
 							Type:     schema.TypeString,
 							Computed: true,
@@ -155,11 +158,16 @@ func setFilterResource(w *jira.Filter, d *schema.ResourceData) {
 			permissionID = ""
 		}
 
+		permissionType := permissionResult.Type
+		if permissionType == "loggedin" {
+			permissionType = "authenticated"
+		}
+
 		m := map[string]interface{}{
 			"group_name":      permissionResult.Group.Name,
 			"project_id":      permissionResult.Project.ID,
 			"project_role_id": projectRoleID,
-			"type":            permissionResult.Type,
+			"type":            permissionType,
 			"id":              permissionID,
 		}
 		permissions.Add(m)
