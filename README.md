@@ -152,6 +152,11 @@ resource "jira_filter" "filter" {
     type = "group"
     group_name = "Team A"
   }
+
+  // Any authenticated user
+  permissions {
+    type = "authenticated"
+  }
 }
 
 resource "jira_project_category" "categroy" {
