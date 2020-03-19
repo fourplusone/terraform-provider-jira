@@ -182,6 +182,7 @@ func resourceFilterCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
 	filter := new(FilterRequest)
+	permissions := d.Get("permissions").(*schema.Set)
 	returnedFilter := new(jira.Filter)
 	setFilter(filter, d)
 
@@ -192,9 +193,12 @@ func resourceFilterCreate(d *schema.ResourceData, m interface{}) error {
 
 	setFilterResource(returnedFilter, d)
 
-	permissions := d.Get("permissions").(*schema.Set)
+	err = filterAddPermissions(permissions.List(), returnedFilter.ID, config)
+	if err != nil {
+		return err
+	}
 
-	filterAddPermissions(permissions.List(), d.Id(), config)
+	setFilterResource(returnedFilter, d)
 
 	return nil
 }
