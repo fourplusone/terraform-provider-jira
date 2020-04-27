@@ -57,6 +57,20 @@ func getUserByKey(client *jira.Client, key string) (*jira.User, *jira.Response, 
 	return user, resp, nil
 }
 
+func deleteUserByKey(client *jira.Client, key string) (*jira.Response, error) {
+	apiEndpoint := fmt.Sprintf("%s?key=%s", userAPIEndpoint, key)
+	req, err := client.NewRequest("DELETE", apiEndpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Do(req, nil)
+	if err != nil {
+		return resp, jira.NewJiraError(resp, err)
+	}
+	return resp, nil
+}
+
 // resourceUserCreate creates a new jira user using the jira api
 func resourceUserCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
@@ -102,7 +116,7 @@ func resourceUserRead(d *schema.ResourceData, m interface{}) error {
 func resourceUserDelete(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
-	_, err := config.jiraClient.User.Delete(d.Id())
+	_, err := deleteUserByKey(config.jiraClient, d.Id())
 
 	if err != nil {
 		return errors.Wrap(err, "Request failed")
