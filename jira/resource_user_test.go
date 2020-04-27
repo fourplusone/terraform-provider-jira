@@ -37,7 +37,7 @@ func testAccCheckJiraUserDestroy(s *terraform.State) error {
 		}
 		id := rs.Primary.ID
 
-		_, resp, _ := client.User.Get(id)
+		_, resp, _ := getUserByKey(client, id)
 
 		if resp.StatusCode != 404 {
 			return fmt.Errorf("User %q still exists", rs.Primary.ID)
@@ -61,7 +61,7 @@ func testAccCheckJiraUserExists(n string) resource.TestCheckFunc {
 		}
 
 		client := testAccProvider.Meta().(*Config).jiraClient
-		_, resp, _ := client.User.Get(rs.Primary.ID)
+		_, resp, _ := getUserByKey(client, rs.Primary.ID)
 
 		if resp.StatusCode != 200 {
 			return fmt.Errorf("User %q does not exists", rs.Primary.ID)
