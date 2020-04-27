@@ -23,6 +23,7 @@ const issueTypeAPIEndpoint = "/rest/api/2/issuetype"
 const projectAPIEndpoint = "/rest/api/2/project"
 const projectCategoryAPIEndpoint = "/rest/api/2/projectCategory"
 const roleAPIEndpoint = "/rest/api/2/role"
+const userAPIEndpoint = "/rest/api/2/user"
 const webhookAPIEndpoint = "/rest/webhooks/1.0/webhook"
 
 func projectWithSharedConfigurationAPIEndpoint(projectID int) string {

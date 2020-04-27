@@ -1,6 +1,7 @@
 package jira
 
 import (
+	"fmt"
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/pkg/errors"
@@ -41,6 +42,21 @@ func resourceUser() *schema.Resource {
 	}
 }
 
+func getUserByKey(client *jira.Client, key string) (*jira.User, *jira.Response, error) {
+	apiEndpoint := fmt.Sprintf("%s?key=%s", userAPIEndpoint, key)
+	req, err := client.NewRequest("GET", apiEndpoint, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	user := new(jira.User)
+	resp, err := client.Do(req, user)
+	if err != nil {
+		return nil, resp, jira.NewJiraError(resp, err)
+	}
+	return user, resp, nil
+}
+
 // resourceUserCreate creates a new jira user using the jira api
 func resourceUserCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
@@ -71,7 +87,7 @@ func resourceUserCreate(d *schema.ResourceData, m interface{}) error {
 func resourceUserRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
-	user, _, err := config.jiraClient.User.Get(d.Id())
+	user, _, err := getUserByKey(config.jiraClient, d.Id())
 	if err != nil {
 		return errors.Wrap(err, "getting jira user failed")
 	}
