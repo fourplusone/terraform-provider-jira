@@ -161,7 +161,7 @@ resource "jira_filter" "filter" {
   }
 }
 
-resource "jira_project_category" "categroy" {
+resource "jira_project_category" "category" {
   name = "Managed"
   description = "Managed Projects"
 }
