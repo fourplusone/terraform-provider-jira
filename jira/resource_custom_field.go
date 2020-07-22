@@ -57,7 +57,7 @@ func getCustomFieldById(client *jira.Client, id string) (*jira.Field, *jira.Resp
         }
     }
 
-    return nil, resp, nil
+    return nil, resp, errors.Errorf("Custom Field not found")
 }
 
 // resourceCustomFieldRead reads custom field details using jira api
