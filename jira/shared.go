@@ -19,6 +19,7 @@ const groupUserAPIEndpoint = "/rest/api/2/group/user"
 const issueLinkAPIEndpoint = "/rest/api/2/issueLink"
 const issueLinkTypeAPIEndpoint = "/rest/api/2/issueLinkType"
 const issueTypeAPIEndpoint = "/rest/api/2/issuetype"
+const fieldAPIEndpoint = "/rest/api/2/field"
 
 const projectAPIEndpoint = "/rest/api/2/project"
 const projectCategoryAPIEndpoint = "/rest/api/2/projectCategory"
