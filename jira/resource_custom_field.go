@@ -1,6 +1,9 @@
 package jira
 
 import (
+    "log"
+    "time"
+
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/pkg/errors"
@@ -69,6 +72,8 @@ func resourceCustomFieldRead(d *schema.ResourceData, m interface{}) error {
 		return errors.Wrap(err, "getting jira field failed")
 	}
 
+	log.Printf("Read custom field (id=%s)", field.ID)
+
 	d.Set("name", field.Name)
 	return nil
 }
@@ -91,9 +96,16 @@ func resourceCustomFieldCreate(d *schema.ResourceData, m interface{}) error {
         return errors.Wrap(err, "Request failed")
     }
 
+    log.Printf("Created new Custom Field: %s", returnedField.ID)
+
     d.SetId(returnedField.ID)
 
-	return resourceCustomFieldRead(d, m)
+    for err != nil {
+        time.Sleep(200 * time.Millisecond)
+        err = resourceCustomFieldRead(d, m)
+    }
+
+    return err
 }
 
 func resourceCustomFieldDelete(d *schema.ResourceData, m interface{}) error {
