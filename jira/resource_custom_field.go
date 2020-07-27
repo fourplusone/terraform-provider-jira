@@ -1,8 +1,8 @@
 package jira
 
 import (
-    "log"
-    "time"
+	"log"
+	"time"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -25,10 +25,10 @@ func resourceCustomField() *schema.Resource {
 		Delete: resourceCustomFieldDelete,
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
-                Type:     schema.TypeString,
-                Required: true,
-                ForceNew: true,
-            },
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
 			"type": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -50,17 +50,17 @@ func resourceCustomField() *schema.Resource {
 
 func getCustomFieldById(client *jira.Client, id string) (*jira.Field, *jira.Response, error) {
 	fields, resp, err := client.Field.GetList()
-    if fields == nil {
-        return nil, nil, err
-    }
+	if fields == nil {
+		return nil, nil, err
+	}
 
-    for _, field := range fields {
-        if field.ID == id {
-            return &field, resp, nil
-        }
-    }
+	for _, field := range fields {
+		if field.ID == id {
+			return &field, resp, nil
+		}
+	}
 
-    return nil, resp, errors.Errorf("Custom Field not found")
+	return nil, resp, errors.Errorf("Custom Field not found")
 }
 
 // resourceCustomFieldRead reads custom field details using jira api
@@ -82,32 +82,32 @@ func resourceCustomFieldRead(d *schema.ResourceData, m interface{}) error {
 func resourceCustomFieldCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
-    field := &FieldRequest{
-        Name:                d.Get("name").(string),
-        Description:         d.Get("description").(string),
-        Type:                d.Get("type").(string),
-        SearcherKey:         d.Get("searcher_key").(string),
-    }
+	field := &FieldRequest{
+		Name:                d.Get("name").(string),
+		Description:         d.Get("description").(string),
+		Type:                d.Get("type").(string),
+		SearcherKey:         d.Get("searcher_key").(string),
+	}
 
-    returnedField := new(jira.Field)
+	returnedField := new(jira.Field)
 
-    err := request(config.jiraClient, "POST", fieldAPIEndpoint, field, returnedField)
-    if err != nil {
-        return errors.Wrap(err, "Request failed")
-    }
+	err := request(config.jiraClient, "POST", fieldAPIEndpoint, field, returnedField)
+	if err != nil {
+		return errors.Wrap(err, "Request failed")
+	}
 
-    log.Printf("Created new Custom Field: %s", returnedField.ID)
+	log.Printf("Created new Custom Field: %s", returnedField.ID)
 
-    d.SetId(returnedField.ID)
+	d.SetId(returnedField.ID)
 
-    for err != nil {
-        time.Sleep(200 * time.Millisecond)
-        err = resourceCustomFieldRead(d, m)
-    }
+	for err != nil {
+		time.Sleep(200 * time.Millisecond)
+		err = resourceCustomFieldRead(d, m)
+	}
 
-    return err
+	return err
 }
 
 func resourceCustomFieldDelete(d *schema.ResourceData, m interface{}) error {
-    return errors.Errorf("There is no way to delete a custom field via REST API")
+	return errors.Errorf("There is no way to delete a custom field via REST API")
 }

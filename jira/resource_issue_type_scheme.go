@@ -1,10 +1,10 @@
 package jira
 
 import (
-    "fmt"
-    "net/url"
-    "strconv"
-    "log"
+	"fmt"
+	"net/url"
+	"strconv"
+	"log"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -19,23 +19,23 @@ func resourceIssueTypeScheme() *schema.Resource {
 		Update: resourceIssueTypeSchemeUpdate,
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
-                Type:     schema.TypeString,
-                Required: true,
-                ForceNew: true,
-            },
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
 			"description": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 			"issue_type_ids": &schema.Schema{
 				Type:     schema.TypeSet,
-                Elem:     &schema.Schema{ Type: schema.TypeString, },
+				Elem:     &schema.Schema{ Type: schema.TypeString, },
 				Required: true,
 				ForceNew: true,
 			},
 			"project_ids": &schema.Schema{
 				Type:     schema.TypeSet,
-                Elem:     &schema.Schema{ Type: schema.TypeString, },
+				Elem:     &schema.Schema{ Type: schema.TypeString, },
 				Required: true,
 				ForceNew: true,
 			},
@@ -48,8 +48,8 @@ func resourceIssueTypeScheme() *schema.Resource {
 }
 
 type IssueTypeSchemeItem struct {
-    IssueTypeSchemeId  string  `json:"issueTypeSchemeId"`
-    IssueTypeId        string  `json:"issueTypeId"`
+	IssueTypeSchemeId  string  `json:"issueTypeSchemeId"`
+	IssueTypeId        string  `json:"issueTypeId"`
 }
 
 type GetIssueTypeSchemeItemsResult struct {
@@ -61,7 +61,7 @@ type GetIssueTypeSchemeItemsResult struct {
 }
 
 func listIssueTypeSchemeItems(client *jira.Client, issueTypeSchemeId string, items *schema.Set) error {
-    relativeURL, _ := url.Parse(issueTypeSchemeMappingAPIEndpoint)
+	relativeURL, _ := url.Parse(issueTypeSchemeMappingAPIEndpoint)
 	query := relativeURL.Query()
 
 	resp := new(GetIssueTypeSchemeItemsResult)
@@ -69,54 +69,54 @@ func listIssueTypeSchemeItems(client *jira.Client, issueTypeSchemeId string, ite
 	resp.StartAt = 0
 	resp.MaxResults = 200
 
-    for !resp.IsLast {
-        query.Set("startAt", strconv.Itoa(resp.StartAt + len(resp.Values)))
-        query.Set("maxResults", strconv.Itoa(resp.MaxResults))
-        query.Set("issueTypeSchemeId", issueTypeSchemeId)
-        relativeURL.RawQuery = query.Encode()
+	for !resp.IsLast {
+		query.Set("startAt", strconv.Itoa(resp.StartAt + len(resp.Values)))
+		query.Set("maxResults", strconv.Itoa(resp.MaxResults))
+		query.Set("issueTypeSchemeId", issueTypeSchemeId)
+		relativeURL.RawQuery = query.Encode()
 
-        err := request(client, "GET", relativeURL.String(), nil, resp)
-        if err != nil {
-            return err
-        }
+		err := request(client, "GET", relativeURL.String(), nil, resp)
+		if err != nil {
+			return err
+		}
 
-        for _, v := range resp.Values {
-            items.Add(v.IssueTypeId)
-        }
-    }
+		for _, v := range resp.Values {
+			items.Add(v.IssueTypeId)
+		}
+	}
 
-    return nil
+	return nil
 }
 
 type AddProjectAssociationRequest struct {
-    IdsOrKeys []string `json:"idsOrKeys" structs:"idsOrKeys"`
+	IdsOrKeys []string `json:"idsOrKeys" structs:"idsOrKeys"`
 }
 
 // https://docs.atlassian.com/software/jira/docs/api/REST/8.10.1/#api/2/issuetypescheme-setProjectAssociationsForScheme
 func setProjectAssociationToScheme(client *jira.Client, schemeId string, items *schema.Set) error {
-    ep := fmt.Sprintf("%s/%s/associations", issueTypeSchemeAPIEndpoint, schemeId)
-    req := new(AddProjectAssociationRequest)
-    req.IdsOrKeys = make([]string, items.Len())
-    for i, idOrKey := range items.List() {
-        req.IdsOrKeys[i] = idOrKey.(string)
-    }
+	ep := fmt.Sprintf("%s/%s/associations", issueTypeSchemeAPIEndpoint, schemeId)
+	req := new(AddProjectAssociationRequest)
+	req.IdsOrKeys = make([]string, items.Len())
+	for i, idOrKey := range items.List() {
+		req.IdsOrKeys[i] = idOrKey.(string)
+	}
 
-    return request(client, "PUT", ep, req, nil)
+	return request(client, "PUT", ep, req, nil)
 }
 
 func getProjectAssociationFromScheme(client *jira.Client, schemeId string, items *schema.Set) error {
-    ep := fmt.Sprintf("%s/%s/associations", issueTypeSchemeAPIEndpoint, schemeId)
-    resp := new(jira.ProjectList)
-    err := request(client, "GET", ep, nil, resp)
-    if err != nil {
-        return err
-    }
+	ep := fmt.Sprintf("%s/%s/associations", issueTypeSchemeAPIEndpoint, schemeId)
+	resp := new(jira.ProjectList)
+	err := request(client, "GET", ep, nil, resp)
+	if err != nil {
+		return err
+	}
 
-    for _, v := range *resp {
-        items.Add(v.ID)
-    }
+	for _, v := range *resp {
+		items.Add(v.ID)
+	}
 
-    return nil
+	return nil
 }
 
 type IssueTypeScheme struct {
@@ -134,7 +134,7 @@ type GetIssueTypeSchemeResult struct {
 }
 
 func resourceIssueTypeSchemeRead(d *schema.ResourceData, m interface{}) error {
-    config := m.(*Config)
+	config := m.(*Config)
 
 	relativeURL, _ := url.Parse(issueTypeSchemeAPIEndpoint)
 	query := relativeURL.Query()
@@ -143,44 +143,44 @@ func resourceIssueTypeSchemeRead(d *schema.ResourceData, m interface{}) error {
 
 	resp := new(GetIssueTypeSchemeResult)
 
-    err := request(config.jiraClient, "GET", relativeURL.String(), nil, resp)
-    if err != nil || resp.Total != 1 {
-        return errors.Wrap(err, "getting JIRA Issue Type Scheme failed")
-    }
+	err := request(config.jiraClient, "GET", relativeURL.String(), nil, resp)
+	if err != nil || resp.Total != 1 {
+		return errors.Wrap(err, "getting JIRA Issue Type Scheme failed")
+	}
 
-    scheme := resp.Values[0]
+	scheme := resp.Values[0]
 
-    d.Set("name", scheme.Name)
-    d.Set("description", scheme.Description)
-    d.Set("default_issue_type_id", scheme.DefaultIssueTypeId)
+	d.Set("name", scheme.Name)
+	d.Set("description", scheme.Description)
+	d.Set("default_issue_type_id", scheme.DefaultIssueTypeId)
 
-    items := schema.NewSet(schema.HashString, make([]interface{}, 0))
-    err = listIssueTypeSchemeItems(config.jiraClient, d.Id(), items)
-    if err != nil {
-        return errors.Wrap(err, "getting JIRA Issue Type Scheme items failed")
-    }
+	items := schema.NewSet(schema.HashString, make([]interface{}, 0))
+	err = listIssueTypeSchemeItems(config.jiraClient, d.Id(), items)
+	if err != nil {
+		return errors.Wrap(err, "getting JIRA Issue Type Scheme items failed")
+	}
 
-    log.Printf("Read Issue Type Scheme (%s) with %d items", scheme.Name, items.Len())
+	log.Printf("Read Issue Type Scheme (%s) with %d items", scheme.Name, items.Len())
 
-    // TypeSet members needs to be checked
-    if err := d.Set("issue_type_ids", items); err != nil {
-        return errors.Wrap(err, "Error setting issue type ids")
-    }
+	// TypeSet members needs to be checked
+	if err := d.Set("issue_type_ids", items); err != nil {
+		return errors.Wrap(err, "Error setting issue type ids")
+	}
 
-    items = schema.NewSet(schema.HashString, make([]interface{}, 0))
-    err = getProjectAssociationFromScheme(config.jiraClient, d.Id(), items)
-    if err != nil {
-        return errors.Wrap(err, "getting JIRA Issue Type Scheme associated projects failed")
-    }
+	items = schema.NewSet(schema.HashString, make([]interface{}, 0))
+	err = getProjectAssociationFromScheme(config.jiraClient, d.Id(), items)
+	if err != nil {
+		return errors.Wrap(err, "getting JIRA Issue Type Scheme associated projects failed")
+	}
 
-    log.Printf("Read Issue Type Scheme (%s) with %d projects", scheme.Name, items.Len())
+	log.Printf("Read Issue Type Scheme (%s) with %d projects", scheme.Name, items.Len())
 
-    // TypeSet members needs to be checked
-    if err := d.Set("project_ids", items); err != nil {
-        return errors.Wrap(err, "Error setting project ids")
-    }
+	// TypeSet members needs to be checked
+	if err := d.Set("project_ids", items); err != nil {
+		return errors.Wrap(err, "Error setting project ids")
+	}
 
-    return nil
+	return nil
 }
 
 type CreateIssueTypeSchemeResponse struct {
@@ -198,10 +198,10 @@ func resourceIssueTypeSchemeCreate(d *schema.ResourceData, m interface{}) error 
 	items := d.Get("issue_type_ids").(*schema.Set).List()
 	scheme.IssueTypeIds = make([]string, len(items))
 	for i, v := range items {
-	    scheme.IssueTypeIds[i] = v.(string)
+		scheme.IssueTypeIds[i] = v.(string)
 	}
 
-    resp := new(CreateIssueTypeSchemeResponse)
+	resp := new(CreateIssueTypeSchemeResponse)
 
 	err := request(config.jiraClient, "POST", issueTypeSchemeAPIEndpoint, scheme, resp)
 	if err != nil {
@@ -209,7 +209,7 @@ func resourceIssueTypeSchemeCreate(d *schema.ResourceData, m interface{}) error 
 	}
 
 	if resp.ID == "" {
-	    return errors.Errorf("New Issue Type Scheme ID was NOT returned %+v", resp)
+		return errors.Errorf("New Issue Type Scheme ID was NOT returned %+v", resp)
 	}
 
 	log.Printf("Created new Issue Type Scheme: %s", resp.ID)
@@ -217,15 +217,15 @@ func resourceIssueTypeSchemeCreate(d *schema.ResourceData, m interface{}) error 
 	d.SetId(resp.ID)
 
 	err = setProjectAssociationToScheme(config.jiraClient, resp.ID, d.Get("project_ids").(*schema.Set))
-    if err != nil {
-        return errors.Wrap(err, "Request failed")
-    }
+	if err != nil {
+		return errors.Wrap(err, "Request failed")
+	}
 
 	return resourceIssueTypeSchemeRead(d, m)
 }
 
 func resourceIssueTypeSchemeDelete(d *schema.ResourceData, m interface{}) error {
-    config := m.(*Config)
+	config := m.(*Config)
 
 	urlStr := fmt.Sprintf("%s/%s", issueTypeSchemeAPIEndpoint, d.Id())
 
@@ -244,14 +244,14 @@ type UpdateIssueTypeScheme struct {
 }
 
 func resourceIssueTypeSchemeUpdate(d *schema.ResourceData, m interface{}) error {
-    config := m.(*Config)
+	config := m.(*Config)
 
 	urlStr := fmt.Sprintf("%s/%s", issueTypeSchemeAPIEndpoint, d.Id())
 
 	scheme := new(UpdateIssueTypeScheme)
-    scheme.Name = d.Get("name").(string)
-    scheme.Description = d.Get("description").(string)
-    scheme.DefaultIssueTypeId = d.Get("default_issue_type_id").(string)
+	scheme.Name = d.Get("name").(string)
+	scheme.Description = d.Get("description").(string)
+	scheme.DefaultIssueTypeId = d.Get("default_issue_type_id").(string)
 
 	err := request(config.jiraClient, "PUT", urlStr, scheme, nil)
 	if err != nil {
@@ -259,9 +259,9 @@ func resourceIssueTypeSchemeUpdate(d *schema.ResourceData, m interface{}) error 
 	}
 
 	err = setProjectAssociationToScheme(config.jiraClient, d.Id(), d.Get("project_ids").(*schema.Set))
-    if err != nil {
-        return errors.Wrap(err, "Request failed")
-    }
+	if err != nil {
+		return errors.Wrap(err, "Request failed")
+	}
 
 	return resourceIssueTypeSchemeRead(d, m)
 }
