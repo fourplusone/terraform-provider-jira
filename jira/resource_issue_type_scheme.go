@@ -33,6 +33,12 @@ func resourceIssueTypeScheme() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"project_ids": &schema.Schema{
+				Type:     schema.TypeSet,
+                Elem:     &schema.Schema{ Type: schema.TypeString, },
+				Required: true,
+				ForceNew: true,
+			},
 			"default_issue_type_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -47,11 +53,11 @@ type IssueTypeSchemeItem struct {
 }
 
 type GetIssueTypeSchemeItemsResult struct {
-	StartAt    int                       `json:"startAt"`
-	MaxResults int                       `json:"maxResults"`
-	Total      int                       `json:"total"`
-	IsLast     bool                      `json:"isLast"`
-	Values     []IssueTypeSchemeItem     `json:"values"`
+	StartAt    int                    `json:"startAt"`
+	MaxResults int                    `json:"maxResults"`
+	Total      int                    `json:"total"`
+	IsLast     bool                   `json:"isLast"`
+	Values     []IssueTypeSchemeItem  `json:"values"`
 }
 
 func listIssueTypeSchemeItems(client *jira.Client, issueTypeSchemeId string, items *schema.Set) error {
@@ -77,6 +83,37 @@ func listIssueTypeSchemeItems(client *jira.Client, issueTypeSchemeId string, ite
         for _, v := range resp.Values {
             items.Add(v.IssueTypeId)
         }
+    }
+
+    return nil
+}
+
+type AddProjectAssociationRequest struct {
+    IdsOrKeys []string `json:"idsOrKeys" structs:"idsOrKeys"`
+}
+
+// https://docs.atlassian.com/software/jira/docs/api/REST/8.10.1/#api/2/issuetypescheme-setProjectAssociationsForScheme
+func setProjectAssociationToScheme(client *jira.Client, schemeId string, items *schema.Set) error {
+    ep := fmt.Sprintf("%s/%s/associations", issueTypeSchemeAPIEndpoint, schemeId)
+    req := new(AddProjectAssociationRequest)
+    req.IdsOrKeys = make([]string, items.Len())
+    for i, idOrKey := range items.List() {
+        req.IdsOrKeys[i] = idOrKey.(string)
+    }
+
+    return request(client, "PUT", ep, req, nil)
+}
+
+func getProjectAssociationFromScheme(client *jira.Client, schemeId string, items *schema.Set) error {
+    ep := fmt.Sprintf("%s/%s/associations", issueTypeSchemeAPIEndpoint, schemeId)
+    resp := new(jira.ProjectList)
+    err := request(client, "GET", ep, nil, resp)
+    if err != nil {
+        return err
+    }
+
+    for _, v := range *resp {
+        items.Add(v.ID)
     }
 
     return nil
@@ -130,6 +167,19 @@ func resourceIssueTypeSchemeRead(d *schema.ResourceData, m interface{}) error {
         return errors.Wrap(err, "Error setting issue type ids")
     }
 
+    items = schema.NewSet(schema.HashString, make([]interface{}, 0))
+    err = getProjectAssociationFromScheme(config.jiraClient, d.Id(), items)
+    if err != nil {
+        return errors.Wrap(err, "getting JIRA Issue Type Scheme associated projects failed")
+    }
+
+    log.Printf("Read Issue Type Scheme (%s) with %d projects", scheme.Name, items.Len())
+
+    // TypeSet members needs to be checked
+    if err := d.Set("project_ids", items); err != nil {
+        return errors.Wrap(err, "Error setting project ids")
+    }
+
     return nil
 }
 
@@ -165,6 +215,11 @@ func resourceIssueTypeSchemeCreate(d *schema.ResourceData, m interface{}) error 
 	log.Printf("Created new Issue Type Scheme: %s", resp.ID)
 
 	d.SetId(resp.ID)
+
+	err = setProjectAssociationToScheme(config.jiraClient, resp.ID, d.Get("project_ids").(*schema.Set))
+    if err != nil {
+        return errors.Wrap(err, "Request failed")
+    }
 
 	return resourceIssueTypeSchemeRead(d, m)
 }
@@ -202,6 +257,11 @@ func resourceIssueTypeSchemeUpdate(d *schema.ResourceData, m interface{}) error 
 	if err != nil {
 		return errors.Wrap(err, "Request failed")
 	}
+
+	err = setProjectAssociationToScheme(config.jiraClient, d.Id(), d.Get("project_ids").(*schema.Set))
+    if err != nil {
+        return errors.Wrap(err, "Request failed")
+    }
 
 	return resourceIssueTypeSchemeRead(d, m)
 }
