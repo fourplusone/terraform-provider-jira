@@ -174,7 +174,6 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 	assignee := d.Get("assignee")
-	reporter := d.Get("reporter")
 	issueType := d.Get("issue_type").(string)
 	description := d.Get("description").(string)
 	summary := d.Get("summary").(string)
@@ -199,12 +198,6 @@ func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 	if assignee != "" {
 		i.Fields.Assignee = &jira.User{
 			Name: assignee.(string),
-		}
-	}
-
-	if reporter != "" {
-		i.Fields.Reporter = &jira.User{
-			Name: reporter.(string),
 		}
 	}
 
