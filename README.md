@@ -1,6 +1,6 @@
 # terraform-provider-jira
 
-Terraform Provider for managing JIRA. 
+Terraform Provider for managing JIRA. (__[View on registry.terraform.io](https://registry.terraform.io/providers/fourplusone/jira/latest)__)
 
 __[Support this project on Patreon](https://www.patreon.com/fourplusone)__
 
@@ -41,6 +41,25 @@ This can be used to interlink infrastructure management with JIRA issues closely
 | Cloud   | Untested     |   
 
 ## Install
+
+## Terraform v0.13
+
+Copy this code into yout terraform configuration file (for example `main.tf`)
+
+```hcl
+terraform {
+  required_providers {
+    jira = {
+      source = "fourplusone/jira"
+      version = "0.1.14"
+    }
+  }
+}
+```
+
+Run `terraform init`
+
+## Terraform v0.12 
 
 * Download `terraform-provider-jira` binary from [Github](https://github.com/fourplusone/terraform-provider-jira/releases)
 * Unzip the zip file
