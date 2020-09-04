@@ -16,15 +16,6 @@ workflows:
               only: /^v.*/
             branches:
               ignore: /.*/
-      - publish-github-release:
-          requires:
-            - build
-            - test
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
   build:
     jobs:
         - build
@@ -69,15 +60,3 @@ jobs:
             JIRA_PASSWORD: admin
           command: |
             make test
-
-  publish-github-release:
-    docker:
-      - image: circleci/golang:1.13
-    steps:
-      - attach_workspace:
-          at: ./workspace
-      - run:
-          name: "Publish Release on GitHub"
-          command: |
-            go get github.com/tcnksm/ghr
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${CIRCLE_TAG}  ./workspace/artifacts
