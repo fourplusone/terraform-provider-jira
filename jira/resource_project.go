@@ -24,7 +24,7 @@ type ProjectRequest struct {
 	IssueSecurityScheme int    `json:"issueSecurityScheme,omitempty" structs:"issueSecurityScheme,omitempty"`
 	PermissionScheme    int    `json:"permissionScheme,omitempty" structs:"permissionScheme,omitempty"`
 	NotificationScheme  int    `json:"notificationScheme,omitempty" structs:"notificationScheme,omitempty"`
-	CategoryID          int    `json:"categoryId,omitempty" structs:"categoryId,omitempty"`
+	CategoryID          string `json:"categoryId,omitempty" structs:"categoryId,omitempty"`
 }
 
 type SharedConfigurationProjectResponse struct {
@@ -128,7 +128,7 @@ func resourceProject() *schema.Resource {
 				Optional: true,
 			},
 			"category_id": &schema.Schema{
-				Type:     schema.TypeInt,
+				Type:     schema.TypeString,
 				Optional: true,
 			},
 		},
@@ -181,7 +181,7 @@ func resourceProjectCreate(d *schema.ResourceData, m interface{}) error {
 			IssueSecurityScheme: d.Get("issue_security_scheme").(int),
 			PermissionScheme:    d.Get("permission_scheme").(int),
 			NotificationScheme:  d.Get("notification_scheme").(int),
-			CategoryID:          d.Get("category_id").(int),
+			CategoryID:          d.Get("category_id").(string),
 		}
 
 		returnedProject := new(IDResponse)
@@ -212,7 +212,7 @@ func resourceProjectRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("key", project.Key)
 	d.Set("name", project.Name)
 	d.Set("description", project.Description)
-	d.Set("lead", project.Lead)
+	d.Set("lead", project.Lead.DisplayName)
 	d.Set("lead_account_id", project.Lead.AccountID)
 	d.Set("url", project.URL)
 	d.Set("assignee_type", project.AssigneeType)
@@ -257,7 +257,7 @@ func resourceProjectUpdate(d *schema.ResourceData, m interface{}) error {
 		IssueSecurityScheme: d.Get("issue_security_scheme").(int),
 		PermissionScheme:    d.Get("permission_scheme").(int),
 		NotificationScheme:  d.Get("notification_scheme").(int),
-		CategoryID:          d.Get("category_id").(int),
+		CategoryID:          d.Get("category_id").(string),
 	}
 	urlStr := fmt.Sprintf("%s/%s", projectAPIEndpoint, d.Id())
 
