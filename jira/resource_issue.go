@@ -15,6 +15,9 @@ func resourceIssue() *schema.Resource {
 		Read:   resourceIssueRead,
 		Update: resourceIssueUpdate,
 		Delete: resourceIssueDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceIssueImport,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"assignee": &schema.Schema{
@@ -260,4 +263,13 @@ func resourceIssueDelete(d *schema.ResourceData, m interface{}) error {
 	}
 
 	return nil
+}
+
+// resourceIssueImport imports jira issue using the jira api
+func resourceIssueImport(d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+	err := resourceIssueRead(d, m)
+	if err != nil {
+		return []*schema.ResourceData{}, err
+	}
+	return []*schema.ResourceData{d}, nil
 }
