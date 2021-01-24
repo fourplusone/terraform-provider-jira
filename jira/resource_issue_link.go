@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	jira "github.com/andygrunwald/go-jira"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/pkg/errors"
 )
 
