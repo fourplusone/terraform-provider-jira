@@ -11,6 +11,7 @@ import (
 
 func TestAccJiraIssue_basic(t *testing.T) {
 	rInt := acctest.RandInt()
+	resourceName := "jira_issue.example"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -20,8 +21,13 @@ func TestAccJiraIssue_basic(t *testing.T) {
 			{
 				Config: testAccJiraIssueConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckJiraIssueExists("jira_issue.example"),
+					testAccCheckJiraIssueExists(resourceName),
 				),
+			},
+			{
+				ResourceName: resourceName,
+				ImportState: true,
+				ImportStateVerify: true,
 			},
 		},
 	})
