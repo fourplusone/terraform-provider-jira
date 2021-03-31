@@ -78,15 +78,6 @@ func testAccCheckJiraIssueExists(n string) resource.TestCheckFunc {
 
 func testAccJiraIssueConfig(rInt int) string {
 	return fmt.Sprintf(`
-// The testing JIRA instance does not support epics, this should work for "Classic software" projects
-//data "jira_field" "epic_name" {
-//    name = "Epic Name"
-//}
-
-//data "jira_field" "epic_link" {
-//    name = "Epic Link"
-//}
-
 resource "jira_user" "foo" {
 	name = "project-user-%d"
 	email = "example@example.org"
@@ -100,25 +91,11 @@ resource "jira_project" "foo" {
   project_template_key = "com.atlassian.jira-core-project-templates:jira-core-project-management"
 }
 
-//resource "jira_issue" "example_epic" {
-//	issue_type  = "Epic"
-//	project_key = "${jira_project.foo.key}"
-//	summary     = "Created using Terraform"
-//	labels      = ["label1", "label2"]
-//	fields      = {
-//	  (data.jira_field.epic_name.id) = "Epic%d"
-//  }
-//}
-
 resource "jira_issue" "example" {
 	issue_type    = "Task"
 	project_key   = "${jira_project.foo.key}"
 	summary       = "Created using Terraform"
-	labels        = ["label1", "label2", "label3", "label4"]
-	filter_fields = ["workratio"]
-	//fields      = {
-	//  (data.jira_field.epic_link.id) = jira_issue.example_epic.issue_key
-    //}
+	//labels        = ["label1", "label2", "label3", "label4"]
 }
-`, rInt, rInt, rInt%100000, rInt)
+`, rInt, rInt, rInt%100000)
 }
