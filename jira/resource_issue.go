@@ -234,6 +234,7 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 			}
 		}
 	}
+	d.Set("fields", nil)
 	if len(fields) > 0 {
 		d.Set("fields", fields)
 	}
