@@ -111,10 +111,11 @@ resource "jira_project" "foo" {
 //}
 
 resource "jira_issue" "example" {
-	issue_type  = "Task"
-	project_key = "${jira_project.foo.key}"
-	summary     = "Created using Terraform"
-	labels      = ["label1", "label2", "label3", "label4"]
+	issue_type    = "Task"
+	project_key   = "${jira_project.foo.key}"
+	summary       = "Created using Terraform"
+	labels        = ["label1", "label2", "label3", "label4"]
+	filter_fields = ["workratio"]
 	//fields      = {
 	//  (data.jira_field.epic_link.id) = jira_issue.example_epic.issue_key
     //}

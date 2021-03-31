@@ -45,6 +45,11 @@ func resourceIssue() *schema.Resource {
 					Required: true,
 				},
 			},
+			"filter_fields": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 			"issue_type": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -193,10 +198,28 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 		d.Set("reporter", issue.Fields.Reporter.Name)
 	}
 
+	filter_fields := []string{}
+	filter_fields_raw := d.Get("filter_fields")
+	if filter_fields_raw != nil {
+		for _, raw_field := range filter_fields_raw.([]interface{}) {
+			filter_fields = append(filter_fields, fmt.Sprintf("%v", raw_field))
+		}
+	}
+
+	// This could be more efficient as a map, but it's unlikely this list will be very big so not worth it
+	should_filter := func(field_name string) bool {
+		for _, filter := range filter_fields {
+			if filter == field_name {
+				return true
+			}
+		}
+		return false
+	}
+
 	// Only scalar types supported for now
 	var fields = make(map[string]string)
 	for field := range issue.Fields.Unknowns {
-		if value, exists := issue.Fields.Unknowns.Value(field); exists {
+		if value, exists := issue.Fields.Unknowns.Value(field); exists && !should_filter(field) {
 			switch value.(type) {
 			case bool:
 				fields[field] = fmt.Sprintf("%t", value.(bool))
