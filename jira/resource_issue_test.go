@@ -100,15 +100,15 @@ resource "jira_project" "foo" {
   project_template_key = "com.atlassian.jira-core-project-templates:jira-core-project-management"
 }
 
-resource "jira_issue" "example_epic" {
-	issue_type  = "Epic"
-	project_key = "${jira_project.foo.key}"
-	summary     = "Created using Terraform"
-	labels      = ["label1", "label2"]
-	//fields      = {
-	//  (data.jira_field.epic_name.id) = "Epic%d"
-    //}
-}
+//resource "jira_issue" "example_epic" {
+//	issue_type  = "Epic"
+//	project_key = "${jira_project.foo.key}"
+//	summary     = "Created using Terraform"
+//	labels      = ["label1", "label2"]
+//	fields      = {
+//	  (data.jira_field.epic_name.id) = "Epic%d"
+//  }
+//}
 
 resource "jira_issue" "example" {
 	issue_type  = "Task"
