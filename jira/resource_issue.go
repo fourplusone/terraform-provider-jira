@@ -1,11 +1,13 @@
 package jira
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/pkg/errors"
+	"github.com/trivago/tgo/tcontainer"
 )
 
 // resourceIssue is used to define a JIRA issue
@@ -35,6 +37,14 @@ func resourceIssue() *schema.Resource {
 					return caseInsensitiveSuppressFunc(k, old, new, d)
 				},
 			},
+			"fields": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
 			"issue_type": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -43,6 +53,11 @@ func resourceIssue() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "",
+			},
+			"labels": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 			"summary": &schema.Schema{
 				Type:     schema.TypeString,
@@ -84,8 +99,10 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 	assignee := d.Get("assignee")
 	reporter := d.Get("reporter")
+	fields := d.Get("fields")
 	issueType := d.Get("issue_type").(string)
 	description := d.Get("description").(string)
+	labels := d.Get("labels")
 	summary := d.Get("summary").(string)
 	projectKey := d.Get("project_key").(string)
 
@@ -111,6 +128,21 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 	if reporter != "" {
 		i.Fields.Reporter = &jira.User{
 			Name: reporter.(string),
+		}
+	}
+
+	if fields != nil {
+		if i.Fields.Unknowns == nil {
+			i.Fields.Unknowns = tcontainer.NewMarshalMap()
+		}
+		for field, value := range fields.(map[string]interface{}) {
+			i.Fields.Unknowns.Set(field, fmt.Sprintf("%v", value))
+		}
+	}
+
+	if labels != nil {
+		for _, label := range labels.([]interface{}) {
+			i.Fields.Labels = append(i.Fields.Labels, fmt.Sprintf("%v", label))
 		}
 	}
 
@@ -161,6 +193,32 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 		d.Set("reporter", issue.Fields.Reporter.Name)
 	}
 
+	// Only scalar types supported for now
+	var fields = make(map[string]string)
+	for field := range issue.Fields.Unknowns {
+		if value, exists := issue.Fields.Unknowns.Value(field); exists {
+			switch value.(type) {
+			case bool:
+				fields[field] = fmt.Sprintf("%t", value.(bool))
+			case int:
+				fields[field] = fmt.Sprintf("%d", value.(int))
+			case float32:
+				fields[field] = fmt.Sprintf("%f", value.(float32))
+			case float64:
+				fields[field] = fmt.Sprintf("%f", value.(float64))
+			case uint:
+				fields[field] = fmt.Sprintf("%d", value.(uint))
+			}
+		}
+	}
+	if len(fields) > 0 {
+		d.Set("fields", fields)
+	}
+
+	if issue.Fields.Labels != nil && len(issue.Fields.Labels) > 0 {
+		d.Set("labels", issue.Fields.Labels)
+	}
+
 	d.Set("issue_type", issue.Fields.Type.Name)
 	if issue.Fields.Description != "" {
 		d.Set("description", issue.Fields.Description)
@@ -180,6 +238,8 @@ func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 	reporter := d.Get("reporter")
 	issueType := d.Get("issue_type").(string)
 	description := d.Get("description").(string)
+	fields := d.Get("fields")
+	labels := d.Get("labels")
 	summary := d.Get("summary").(string)
 	projectKey := d.Get("project_key").(string)
 	issueKey := d.Get("issue_key").(string)
@@ -208,6 +268,21 @@ func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 	if reporter != "" {
 		i.Fields.Reporter = &jira.User{
 			Name: reporter.(string),
+		}
+	}
+
+	if labels != nil {
+		for _, label := range labels.([]interface{}) {
+			i.Fields.Labels = append(i.Fields.Labels, fmt.Sprintf("%v", label))
+		}
+	}
+
+	if fields != nil && len(fields.(map[string]interface{})) > 0 {
+		if i.Fields.Unknowns == nil {
+			i.Fields.Unknowns = tcontainer.NewMarshalMap()
+		}
+		for field, value := range fields.(map[string]interface{}) {
+			i.Fields.Unknowns.Set(field, value)
 		}
 	}
 

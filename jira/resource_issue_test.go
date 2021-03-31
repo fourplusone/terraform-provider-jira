@@ -25,8 +25,8 @@ func TestAccJiraIssue_basic(t *testing.T) {
 				),
 			},
 			{
-				ResourceName: resourceName,
-				ImportState: true,
+				ResourceName:      resourceName,
+				ImportState:       true,
 				ImportStateVerify: true,
 			},
 		},
@@ -78,6 +78,13 @@ func testAccCheckJiraIssueExists(n string) resource.TestCheckFunc {
 
 func testAccJiraIssueConfig(rInt int) string {
 	return fmt.Sprintf(`
+data "jira_field" "epic_name" {
+    name = "Epic Name"
+}
+
+data "jira_field" "epic_link" {
+    name = "Epic Link"
+}
 
 resource "jira_user" "foo" {
 	name = "project-user-%d"
@@ -92,9 +99,24 @@ resource "jira_project" "foo" {
   project_template_key = "com.atlassian.jira-core-project-templates:jira-core-project-management"
 }
 
+resource "jira_issue" "example_epic" {
+	issue_type  = "Epic"
+	project_key = "${jira_project.foo.key}"
+	summary     = "Created using Terraform"
+	labels      = ["label1", "label2"]
+	fields      = {
+	  (data.jira_field.epic_name.id) = "Epic%d"
+    }
+}
+
 resource "jira_issue" "example" {
 	issue_type  = "Task"
 	project_key = "${jira_project.foo.key}"
 	summary     = "Created using Terraform"
-  }`, rInt, rInt, rInt%100000)
+	labels      = ["label1", "label2", "label3", "label4"]
+	fields      = {
+	  (data.jira_field.epic_link.id) = jira_issue.example_epic.issue_key
+    }
+}
+`, rInt, rInt, rInt%100000, rInt)
 }
