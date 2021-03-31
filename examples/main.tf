@@ -1,18 +1,10 @@
+// This example works for JIRA projects that support epics
 data "jira_field" "epic_name" {
   name = "Epic Name"
 }
 
-resource "jira_issue" "example" {
-  assignee = "anubhavmishra"
-  reporter = "anubhavmishra"
-
-  issue_type = "Task"
-
-  // description is optional
-  description = "This is a test issue"
-  summary     = "Created using Terraform"
-
-  project_key = "PROJ"
+data "jira_field" "epic_link" {
+  name = "Epic Link"
 }
 
 resource "jira_issue" "example_epic" {
@@ -34,3 +26,21 @@ resource "jira_issue" "example_epic" {
 
   project_key = "PROJ"
 }
+
+resource "jira_issue" "example" {
+  assignee = "anubhavmishra"
+  reporter = "anubhavmishra"
+
+  issue_type = "Task"
+
+  // description is optional
+  description = "This is a test issue that's part of an epic"
+  summary     = "Created using Terraform"
+  labels      = ["label1", "label2"]
+  fields      = {
+    (jira_field.epic_link.id) = jira_issue.example_epic.issue_key
+  }
+
+  project_key = "PROJ"
+}
+
