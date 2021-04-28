@@ -45,11 +45,6 @@ func resourceIssue() *schema.Resource {
 					Required: true,
 				},
 			},
-			"filter_fields": &schema.Schema{
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
 			"issue_type": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -198,47 +193,34 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 		d.Set("reporter", issue.Fields.Reporter.Name)
 	}
 
-	filter_fields := []string{}
-	filter_fields_raw := d.Get("filter_fields")
-	if filter_fields_raw != nil {
-		for _, raw_field := range filter_fields_raw.([]interface{}) {
-			filter_fields = append(filter_fields, fmt.Sprintf("%v", raw_field))
-		}
-	}
-
-	// This could be more efficient as a map, but it's unlikely this list will be very big so not worth it
-	should_filter := func(field_name string) bool {
-		for _, filter := range filter_fields {
-			if filter == field_name {
-				return true
+	// Custom or non-standard fields
+	var resourceFieldsRaw, resourceHasFields = d.GetOk("fields")
+	if resourceHasFields {
+		incomingFields := make(map[string]string)
+		resourceFields := resourceFieldsRaw.(map[string]string)
+		for field := range issue.Fields.Unknowns {
+			if _, existingField := resourceFields[field]; existingField {
+				if value, valueExists := issue.Fields.Unknowns.Value(field); valueExists {
+					// Only scalar types supported for now
+					switch value.(type) {
+					case bool:
+						incomingFields[field] = fmt.Sprintf("%t", value.(bool))
+					case int:
+						incomingFields[field] = fmt.Sprintf("%d", value.(int))
+					case float32:
+						incomingFields[field] = fmt.Sprintf("%f", value.(float32))
+					case float64:
+						incomingFields[field] = fmt.Sprintf("%f", value.(float64))
+					case uint:
+						incomingFields[field] = fmt.Sprintf("%d", value.(uint))
+					}
+				}
 			}
 		}
-		return false
+		d.Set("fields", incomingFields)
 	}
 
-	// Only scalar types supported for now
-	var fields = make(map[string]string)
-	for field := range issue.Fields.Unknowns {
-		if value, exists := issue.Fields.Unknowns.Value(field); exists && !should_filter(field) {
-			switch value.(type) {
-			case bool:
-				fields[field] = fmt.Sprintf("%t", value.(bool))
-			case int:
-				fields[field] = fmt.Sprintf("%d", value.(int))
-			case float32:
-				fields[field] = fmt.Sprintf("%f", value.(float32))
-			case float64:
-				fields[field] = fmt.Sprintf("%f", value.(float64))
-			case uint:
-				fields[field] = fmt.Sprintf("%d", value.(uint))
-			}
-		}
-	}
-	d.Set("fields", nil)
-	if len(fields) > 0 {
-		d.Set("fields", fields)
-	}
-
+	d.Set("labels", nil)
 	if issue.Fields.Labels != nil && len(issue.Fields.Labels) > 0 {
 		d.Set("labels", issue.Fields.Labels)
 	}
@@ -306,7 +288,7 @@ func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 			i.Fields.Unknowns = tcontainer.NewMarshalMap()
 		}
 		for field, value := range fields.(map[string]interface{}) {
-			i.Fields.Unknowns.Set(field, value)
+			i.Fields.Unknowns.Set(field, fmt.Sprintf("%v", value))
 		}
 	}
 

@@ -95,7 +95,7 @@ resource "jira_issue" "example" {
 	issue_type    = "Task"
 	project_key   = "${jira_project.foo.key}"
 	summary       = "Created using Terraform"
-	//labels        = ["label1", "label2", "label3", "label4"]
+	labels        = ["label1", "label2", "label3", "label4"]
 }
 `, rInt, rInt, rInt%100000)
 }
