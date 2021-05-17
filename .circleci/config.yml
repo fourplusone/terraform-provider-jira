@@ -30,6 +30,7 @@ jobs:
       - run:
           name: Build
           command: make release
+          no_output_timeout: 30m
           
       - persist_to_workspace:
           root: .
