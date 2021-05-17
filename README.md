@@ -9,6 +9,7 @@ __[Support this project on Patreon](https://www.patreon.com/fourplusone)__
 ## Data Sources
 
 - Issue Keys from JQL
+- Custom Fields
 
 ## Resources
 
@@ -145,6 +146,20 @@ resource "jira_comment" "example_comment" {
 resource "jira_issue" "another_example" {
   issue_type  = "${jira_issue_type.task.name}"
   summary     = "Also Created using Terraform"
+  labels      = ["label1", "label2"]
+  project_key = "PROJ"
+}
+
+data "jira_field" "epic_link" {
+  name = "Epic Link"
+}
+
+resource "jira_issue" "custom_fields_example" {
+  issue_type  = "${jira_issue_type.task.name}"
+  summary     = "Also Created using Terraform"
+  fields      = {
+    (jira_field.epic_link.id) = jira_issue.example_epic.issue_key
+  }
   project_key = "PROJ"
 }
 
