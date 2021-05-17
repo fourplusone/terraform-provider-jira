@@ -22,6 +22,7 @@ func TestAccJiraIssue_basic(t *testing.T) {
 				Config: testAccJiraIssueConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckJiraIssueExists(resourceName),
+					testAccCheckJiraIssueHasLabels(resourceName),
 				),
 			},
 			{
@@ -71,6 +72,37 @@ func testAccCheckJiraIssueExists(n string) resource.TestCheckFunc {
 		if resp.StatusCode != 200 {
 			return fmt.Errorf("Issue %q does not exists", rs.Primary.ID)
 		}
+		return nil
+	}
+
+}
+
+func testAccCheckJiraIssueHasLabels(n string) resource.TestCheckFunc {
+
+	return func(s *terraform.State) error {
+
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not Found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No project ID is set")
+		}
+
+		client := testAccProvider.Meta().(*Config).jiraClient
+		issue, resp, _ := client.Issue.Get(rs.Primary.ID, nil)
+
+		if resp.StatusCode != 200 {
+			return fmt.Errorf("Issue %q does not exists", rs.Primary.ID)
+		}
+
+		labels := issue.Fields.Labels
+
+		if labels == nil || len(labels) == 0 {
+			return fmt.Errorf("Issue %q does not have any labels", rs.Primary.ID)
+		}
+
 		return nil
 	}
 
