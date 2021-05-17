@@ -23,7 +23,7 @@ workflows:
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.13     
+      - image: circleci/golang:1.16  
     steps:
       - checkout
 
@@ -39,7 +39,7 @@ jobs:
   
   test:
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.16
       - image: fourplusone/docker-atlas:jira-latest
 
     steps:
