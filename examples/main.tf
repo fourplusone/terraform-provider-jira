@@ -39,6 +39,9 @@ resource "jira_issue" "example" {
   labels      = ["label1", "label2"]
   fields      = {
     (jira_field.epic_link.id) = jira_issue.example_epic.issue_key
+    some_complex_field = jsonencode({
+      key = "value"
+    })
   }
 
   project_key = "PROJ"
