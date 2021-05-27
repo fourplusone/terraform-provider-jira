@@ -150,10 +150,16 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 		}
 		for field, value := range fields.(map[string]interface{}) {
 			var decodedValue interface{}
-			if err := json.Unmarshal([]byte(value.(string)), &decodedValue); err != nil {
-				return err
+			valueBytes := []byte(value.(string))
+
+			if json.Valid(valueBytes) {
+				if err := json.Unmarshal([]byte(value.(string)), &decodedValue); err != nil {
+					return err
+				}
+				i.Fields.Unknowns.Set(field, decodedValue)
+			} else {
+				i.Fields.Unknowns.Set(field, value.(string))
 			}
-			i.Fields.Unknowns.Set(field, decodedValue)
 		}
 	}
 
@@ -222,13 +228,30 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 		for field := range issue.Fields.Unknowns {
 			if existingField, fieldExists := resourceFields[field]; fieldExists {
 				if value, valueExists := issue.Fields.Unknowns.Value(field); valueExists {
-					var decodedExistingValue interface{}
-					if err := json.Unmarshal([]byte(existingField.(string)), &decodedExistingValue); err != nil {
-						return err
-					}
+					existingFieldBytes := []byte(existingField.(string))
 
-					marshalledValue, _ := json.Marshal(extractSameKeys(decodedExistingValue, value))
-					incomingFields[field] = string(marshalledValue)
+					if json.Valid(existingFieldBytes) {
+						var decodedExistingValue interface{}
+						if err := json.Unmarshal([]byte(existingField.(string)), &decodedExistingValue); err != nil {
+							return err
+						}
+
+						marshalledValue, _ := json.Marshal(extractSameKeys(decodedExistingValue, value))
+						incomingFields[field] = string(marshalledValue)
+					} else {
+						switch value.(type) {
+						case bool:
+							incomingFields[field] = fmt.Sprintf("%t", value.(bool))
+						case int:
+							incomingFields[field] = fmt.Sprintf("%d", value.(int))
+						case float32:
+							incomingFields[field] = fmt.Sprintf("%f", value.(float32))
+						case float64:
+							incomingFields[field] = fmt.Sprintf("%f", value.(float64))
+						case uint:
+							incomingFields[field] = fmt.Sprintf("%d", value.(uint))
+						}
+					}
 				}
 			}
 		}
@@ -304,10 +327,16 @@ func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 		for field, value := range fields.(map[string]interface{}) {
 			var decodedValue interface{}
-			if err := json.Unmarshal([]byte(value.(string)), &decodedValue); err != nil {
-				return err
+			valueBytes := []byte(value.(string))
+
+			if json.Valid(valueBytes) {
+				if err := json.Unmarshal([]byte(value.(string)), &decodedValue); err != nil {
+					return err
+				}
+				i.Fields.Unknowns.Set(field, decodedValue)
+			} else {
+				i.Fields.Unknowns.Set(field, value.(string))
 			}
-			i.Fields.Unknowns.Set(field, decodedValue)
 		}
 	}
 
