@@ -1,6 +1,7 @@
 package jira
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 
@@ -136,7 +137,11 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 			i.Fields.Unknowns = tcontainer.NewMarshalMap()
 		}
 		for field, value := range fields.(map[string]interface{}) {
-			i.Fields.Unknowns.Set(field, fmt.Sprintf("%v", value))
+			var decodedValue interface{}
+			if err := json.Unmarshal([]byte(value.(string)), &decodedValue); err != nil {
+				return err
+			}
+			i.Fields.Unknowns.Set(field, decodedValue)
 		}
 	}
 
@@ -197,23 +202,17 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 	var resourceFieldsRaw, resourceHasFields = d.GetOk("fields")
 	if resourceHasFields {
 		incomingFields := make(map[string]string)
-		resourceFields := resourceFieldsRaw.(map[string]string)
+		resourceFields := resourceFieldsRaw.(map[string]interface{})
 		for field := range issue.Fields.Unknowns {
-			if _, existingField := resourceFields[field]; existingField {
+			if existingField, fieldExists := resourceFields[field]; fieldExists {
 				if value, valueExists := issue.Fields.Unknowns.Value(field); valueExists {
-					// Only scalar types supported for now
-					switch value.(type) {
-					case bool:
-						incomingFields[field] = fmt.Sprintf("%t", value.(bool))
-					case int:
-						incomingFields[field] = fmt.Sprintf("%d", value.(int))
-					case float32:
-						incomingFields[field] = fmt.Sprintf("%f", value.(float32))
-					case float64:
-						incomingFields[field] = fmt.Sprintf("%f", value.(float64))
-					case uint:
-						incomingFields[field] = fmt.Sprintf("%d", value.(uint))
+					var decodedExistingValue interface{}
+					if err := json.Unmarshal([]byte(existingField.(string)), &decodedExistingValue); err != nil {
+						return err
 					}
+
+					marshalledValue, _ := json.Marshal(extractSameKeys(decodedExistingValue, value))
+					incomingFields[field] = string(marshalledValue)
 				}
 			}
 		}
@@ -288,7 +287,11 @@ func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 			i.Fields.Unknowns = tcontainer.NewMarshalMap()
 		}
 		for field, value := range fields.(map[string]interface{}) {
-			i.Fields.Unknowns.Set(field, fmt.Sprintf("%v", value))
+			var decodedValue interface{}
+			if err := json.Unmarshal([]byte(value.(string)), &decodedValue); err != nil {
+				return err
+			}
+			i.Fields.Unknowns.Set(field, decodedValue)
 		}
 	}
 
@@ -353,4 +356,31 @@ func resourceIssueImport(d *schema.ResourceData, m interface{}) ([]*schema.Resou
 		return []*schema.ResourceData{}, err
 	}
 	return []*schema.ResourceData{d}, nil
+}
+
+// extractSameKeys pulls the values from extendedInput which match keys is baseInput
+func extractSameKeys(baseInput interface{}, extendedInput interface{}) interface{} {
+	switch baseInput.(type) {
+	case map[string]interface{}:
+		if extendedInputMap, ok := extendedInput.(map[string]interface{}); ok {
+			output := map[string]interface{}{}
+			for key, _ := range baseInput.(map[string]interface{}) {
+				output[key] = extendedInputMap[key]
+			}
+			return output
+		}
+	case []interface{}:
+		if extendedInputSlice, ok := extendedInput.([]interface{}); ok {
+			output := []interface{}{}
+			for i, element1 := range baseInput.([]interface{}) {
+				if len(extendedInputSlice) > i {
+					element2 := extendedInputSlice[i]
+					output = append(output, extractSameKeys(element1, element2))
+				}
+			}
+			return output
+		}
+	}
+
+	return extendedInput
 }
