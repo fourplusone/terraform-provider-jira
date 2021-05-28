@@ -283,50 +283,53 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 // resourceIssueUpdate updates jira issue using jira api
 func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
-	assignee := d.Get("assignee")
-	reporter := d.Get("reporter")
-	issueType := d.Get("issue_type").(string)
-	description := d.Get("description").(string)
-	fields := d.Get("fields")
-	labels := d.Get("labels")
-	summary := d.Get("summary").(string)
-	projectKey := d.Get("project_key").(string)
 	issueKey := d.Get("issue_key").(string)
 
 	i := jira.Issue{
-		Key: issueKey,
-		ID:  d.Id(),
-		Fields: &jira.IssueFields{
-			Description: description,
-			Type: jira.IssueType{
-				Name: issueType,
-			},
-			Project: jira.Project{
-				Key: projectKey,
-			},
-			Summary: summary,
-		},
+		Key:    issueKey,
+		ID:     d.Id(),
+		Fields: &jira.IssueFields{},
 	}
 
-	if assignee != "" {
+	if issueType := d.Get("issue_type").(string); d.HasChange("issue_type") {
+		i.Fields.Type = jira.IssueType{
+			Name: issueType,
+		}
+	}
+
+	if description := d.Get("description").(string); d.HasChange("description") {
+		i.Fields.Description = description
+	}
+
+	if summary := d.Get("summary").(string); d.HasChange("summary") {
+		i.Fields.Summary = summary
+	}
+
+	if projectKey := d.Get("project_key").(string); d.HasChange("project_key") {
+		i.Fields.Project = jira.Project{
+			Key: projectKey,
+		}
+	}
+
+	if assignee := d.Get("assignee"); d.HasChange("assignee") && assignee != "" {
 		i.Fields.Assignee = &jira.User{
 			Name: assignee.(string),
 		}
 	}
 
-	if reporter != "" {
+	if reporter := d.Get("reporter"); d.HasChange("reporter") && reporter != "" {
 		i.Fields.Reporter = &jira.User{
 			Name: reporter.(string),
 		}
 	}
 
-	if labels != nil {
+	if labels := d.Get("labels"); d.HasChange("labels") && labels != nil {
 		for _, label := range labels.([]interface{}) {
 			i.Fields.Labels = append(i.Fields.Labels, fmt.Sprintf("%v", label))
 		}
 	}
 
-	if fields != nil && len(fields.(map[string]interface{})) > 0 {
+	if fields := d.Get("fields"); d.HasChange("fields") && fields != nil && len(fields.(map[string]interface{})) > 0 {
 		if i.Fields.Unknowns == nil {
 			i.Fields.Unknowns = tcontainer.NewMarshalMap()
 		}
