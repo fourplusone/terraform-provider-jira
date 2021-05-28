@@ -204,6 +204,11 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 
 	issue, res, err := config.jiraClient.Issue.Get(d.Id(), nil)
 	if err != nil {
+		if res.StatusCode == 404 {
+			d.SetId("")
+			return nil
+		}
+
 		body, _ := ioutil.ReadAll(res.Body)
 		return errors.Wrapf(err, "getting jira issue failed: %s", body)
 	}
