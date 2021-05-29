@@ -1,0 +1,50 @@
+name: Go
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.15
+    - name: Build
+      run: make
+    
+  test:
+    services:
+      jira:
+        image: docker.pkg.github.com/fourplusone/docker-atlas/jira:latest
+        ports:
+        - 2990:2990
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.15
+
+    - name: Wait for JIRA
+      run: |
+        while :
+        do
+        curl http://localhost:2990/jira && break;
+        sleep 10
+        done
+
+    - name: Test
+      env:
+        JIRA_URL: http://localhost:2990/jira/
+        JIRA_USER: admin
+        JIRA_PASSWORD: admin
+      run: make test
