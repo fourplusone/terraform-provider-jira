@@ -23,6 +23,9 @@ jobs:
     services:
       jira:
         image: docker.pkg.github.com/fourplusone/docker-atlas/jira:latest
+        credentials:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
         ports:
         - 2990:2990
     runs-on: ubuntu-latest
