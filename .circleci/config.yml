@@ -40,7 +40,7 @@ jobs:
   test:
     docker:
       - image: circleci/golang:1.16
-      - image: fourplusone/docker-atlas:jira-latest
+      - image: docker.pkg.github.com/fourplusone/docker-atlas/jira:latest
 
     steps:
       - checkout
