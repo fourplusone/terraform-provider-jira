@@ -1,17 +1,6 @@
-# A sample workflow which checks out your Infrastructure as Code Configuration files,
-# such as Kubernetes, Helm & Terraform and scans them for any security issues.
-# The results are then uploaded to GitHub Security Code Scanning
-#
-# For more examples, including how to limit scans to only high-severity issues
-# and fail PR checks, see https://github.com/snyk/actions/
-
 name: Snyk for Golang
-
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ master ]
   schedule:
     - cron: '37 12 * * 1'
