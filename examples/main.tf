@@ -38,7 +38,7 @@ resource "jira_issue" "example" {
   summary     = "Created using Terraform"
   labels      = ["label1", "label2"]
   fields      = {
-    (jira_field.epic_link.id) = jira_issue.example_epic.issue_key
+    (data.jira_field.epic_link.id) = jira_issue.example_epic.issue_key
   }
 
   project_key = "PROJ"
