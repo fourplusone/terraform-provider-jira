@@ -245,6 +245,8 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 						incomingFields[field] = string(marshalledValue)
 					} else {
 						switch value.(type) {
+						case string:
+							incomingFields[field] = value.(string)
 						case bool:
 							incomingFields[field] = fmt.Sprintf("%t", value.(bool))
 						case int:
