@@ -12,6 +12,8 @@ import (
 func TestAccJiraProject_basic(t *testing.T) {
 	rInt := acctest.RandInt()
 
+	resourceName := "jira_project.foo"
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -20,8 +22,14 @@ func TestAccJiraProject_basic(t *testing.T) {
 			{
 				Config: testAccJiraProjectConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckJiraProjectExists("jira_project.foo"),
+					testAccCheckJiraProjectExists(resourceName),
 				),
+			},
+			{
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"shared_configuration_project_id"},
 			},
 		},
 	})
@@ -29,6 +37,8 @@ func TestAccJiraProject_basic(t *testing.T) {
 
 func TestAccJiraProject_shared(t *testing.T) {
 	rInt := acctest.RandInt()
+
+	resourceName := "jira_project.foo_shared"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -38,8 +48,14 @@ func TestAccJiraProject_shared(t *testing.T) {
 			{
 				Config: testAccJiraSharedProjectConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckJiraProjectExists("jira_project.foo_shared"),
+					testAccCheckJiraProjectExists(resourceName),
 				),
+			},
+			{
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"shared_configuration_project_id"},
 			},
 		},
 	})
