@@ -67,6 +67,11 @@ func resourceIssue() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"parent": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"state": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -99,6 +104,7 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 	assignee := d.Get("assignee")
 	reporter := d.Get("reporter")
+	parent := d.Get("parent")
 	fields := d.Get("fields")
 	issueType := d.Get("issue_type").(string)
 	description := d.Get("description").(string)
@@ -128,6 +134,12 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 	if reporter != "" {
 		i.Fields.Reporter = &jira.User{
 			Name: reporter.(string),
+		}
+	}
+
+	if parent != "" {
+		i.Fields.Parent = &jira.Parent{
+			ID: parent.(string),
 		}
 	}
 
@@ -191,6 +203,10 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 
 	if issue.Fields.Reporter != nil {
 		d.Set("reporter", issue.Fields.Reporter.Name)
+	}
+
+	if issue.Fields.Parent != nil {
+		d.Set("parent", issue.Fields.Parent.Key)
 	}
 
 	// Custom or non-standard fields

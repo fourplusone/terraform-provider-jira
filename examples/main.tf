@@ -44,3 +44,17 @@ resource "jira_issue" "example" {
   project_key = "PROJ"
 }
 
+resource "jira_issue" "example_subtask" {
+  assignee = "anubhavmishra"
+  reporter = "anubhavmishra"
+
+  issue_type = "Sub-task"
+
+  // description is optional
+  description = "This is a test subtask"
+  summary     = "Subtask Summary"
+
+  project_key = "PROJ"
+  parent      = jira_issue.example.issue_key
+}
+
