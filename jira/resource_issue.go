@@ -197,7 +197,7 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 	var resourceFieldsRaw, resourceHasFields = d.GetOk("fields")
 	if resourceHasFields {
 		incomingFields := make(map[string]string)
-		resourceFields := resourceFieldsRaw.(map[string]string)
+		resourceFields := resourceFieldsRaw.(map[string]interface{})
 		for field := range issue.Fields.Unknowns {
 			if _, existingField := resourceFields[field]; existingField {
 				if value, valueExists := issue.Fields.Unknowns.Value(field); valueExists {
