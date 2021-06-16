@@ -213,6 +213,8 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 						incomingFields[field] = fmt.Sprintf("%f", value.(float64))
 					case uint:
 						incomingFields[field] = fmt.Sprintf("%d", value.(uint))
+					case string:
+						incomingFields[field] = fmt.Sprintf("%v", value.(string))
 					}
 				}
 			}
