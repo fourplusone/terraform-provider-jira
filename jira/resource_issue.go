@@ -84,12 +84,20 @@ func resourceIssue() *schema.Resource {
 				},
 			},
 			"state_transition": &schema.Schema{
-				Type:     schema.TypeString,
+				Type:     schema.TypeMap,
 				Optional: true,
+				Elem: &schema.Schema{
+					Type:     schema.TypeString,
+					Required: true,
+				},
 			},
 			"delete_transition": &schema.Schema{
-				Type:     schema.TypeString,
+				Type:     schema.TypeMap,
 				Optional: true,
+				Elem: &schema.Schema{
+					Type:     schema.TypeString,
+					Required: true,
+				},
 			},
 			// Computed values
 			"issue_key": &schema.Schema{
@@ -145,21 +153,8 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if fields != nil {
-		if i.Fields.Unknowns == nil {
-			i.Fields.Unknowns = tcontainer.NewMarshalMap()
-		}
-		for field, value := range fields.(map[string]interface{}) {
-			var decodedValue interface{}
-			valueBytes := []byte(value.(string))
-
-			if json.Valid(valueBytes) {
-				if err := json.Unmarshal([]byte(value.(string)), &decodedValue); err != nil {
-					return err
-				}
-				i.Fields.Unknowns.Set(field, decodedValue)
-			} else {
-				i.Fields.Unknowns.Set(field, value.(string))
-			}
+		if err := setCustomFields(&i, &fields); err != nil {
+			return err
 		}
 	}
 
@@ -181,16 +176,8 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 		return errors.Wrapf(err, "getting jira issue failed: %s", body)
 	}
 
-	if state, ok := d.GetOk("state"); ok {
-		if issue.Fields.Status.ID != state.(string) {
-			if transition, ok := d.GetOk("state_transition"); ok {
-				res, err := config.jiraClient.Issue.DoTransition(issue.ID, transition.(string))
-				if err != nil {
-					body, _ := ioutil.ReadAll(res.Body)
-					return errors.Wrapf(err, "transitioning jira issue failed: %s", body)
-				}
-			}
-		}
+	if err := doStateTransition(d, issue, config); err != nil {
+		return err
 	}
 
 	d.SetId(issue.ID)
@@ -228,41 +215,11 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 	// Custom or non-standard fields
 	var resourceFieldsRaw, resourceHasFields = d.GetOk("fields")
 	if resourceHasFields {
-		incomingFields := make(map[string]string)
-		resourceFields := resourceFieldsRaw.(map[string]interface{})
-		for field := range issue.Fields.Unknowns {
-			if existingField, fieldExists := resourceFields[field]; fieldExists {
-				if value, valueExists := issue.Fields.Unknowns.Value(field); valueExists {
-					existingFieldBytes := []byte(existingField.(string))
-
-					if json.Valid(existingFieldBytes) {
-						var decodedExistingValue interface{}
-						if err := json.Unmarshal([]byte(existingField.(string)), &decodedExistingValue); err != nil {
-							return err
-						}
-
-						marshalledValue, _ := json.Marshal(extractSameKeys(decodedExistingValue, value))
-						incomingFields[field] = string(marshalledValue)
-					} else {
-						switch value.(type) {
-						case string:
-							incomingFields[field] = value.(string)
-						case bool:
-							incomingFields[field] = fmt.Sprintf("%t", value.(bool))
-						case int:
-							incomingFields[field] = fmt.Sprintf("%d", value.(int))
-						case float32:
-							incomingFields[field] = fmt.Sprintf("%f", value.(float32))
-						case float64:
-							incomingFields[field] = fmt.Sprintf("%f", value.(float64))
-						case uint:
-							incomingFields[field] = fmt.Sprintf("%d", value.(uint))
-						}
-					}
-				}
-			}
+		customFields, fieldsError := getCustomFields(&resourceFieldsRaw, issue)
+		if fieldsError != nil {
+			return fieldsError
 		}
-		d.Set("fields", incomingFields)
+		d.Set("fields", *customFields)
 	}
 
 	d.Set("labels", nil)
@@ -362,16 +319,8 @@ func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 		return errors.Wrapf(err, "getting jira issue failed: %s", body)
 	}
 
-	if state, ok := d.GetOk("state"); ok {
-		if issue.Fields.Status.ID != state.(string) {
-			if transition, ok := d.GetOk("state_transition"); ok {
-				res, err := config.jiraClient.Issue.DoTransition(issue.ID, transition.(string))
-				if err != nil {
-					body, _ := ioutil.ReadAll(res.Body)
-					return errors.Wrapf(err, "transitioning jira issue failed: %s", body)
-				}
-			}
-		}
+	if err := doStateTransition(d, issue, config); err != nil {
+		return err
 	}
 
 	d.SetId(issue.ID)
@@ -386,10 +335,21 @@ func resourceIssueDelete(d *schema.ResourceData, m interface{}) error {
 	id := d.Id()
 
 	if transition, ok := d.GetOk("delete_transition"); ok {
-		res, err := config.jiraClient.Issue.DoTransition(id, transition.(string))
+
+		issue, res, err := config.jiraClient.Issue.Get(id, nil)
 		if err != nil {
+			if res.StatusCode == 404 {
+				d.SetId("")
+				return nil
+			}
+
 			body, _ := ioutil.ReadAll(res.Body)
-			return errors.Wrapf(err, "deleting jira issue failed: %s", body)
+			return errors.Wrapf(err, "getting jira issue failed: %s", body)
+		}
+		currentState := issue.Fields.Status.ID
+
+		if err := doStateTransitionOnDelete(id, &transition, config, currentState); err != nil {
+			return err
 		}
 
 	} else {
@@ -438,4 +398,134 @@ func extractSameKeys(baseInput interface{}, extendedInput interface{}) interface
 	}
 
 	return extendedInput
+}
+
+func setCustomFields(i *jira.Issue, fields *interface{}) error {
+	if i.Fields.Unknowns == nil {
+		i.Fields.Unknowns = tcontainer.NewMarshalMap()
+	}
+	for field, value := range (*fields).(map[string]interface{}) {
+		var decodedValue interface{}
+		valueBytes := []byte(value.(string))
+
+		if json.Valid(valueBytes) {
+			if err := json.Unmarshal([]byte(value.(string)), &decodedValue); err != nil {
+				return err
+			}
+			i.Fields.Unknowns.Set(field, decodedValue)
+		} else {
+			i.Fields.Unknowns.Set(field, value.(string))
+		}
+	}
+	return nil
+}
+
+func doStateTransition(d *schema.ResourceData, issue *jira.Issue, config *Config) error {
+	key := "state_transition"
+	if desiredState, ok := d.GetOk("state"); ok {
+		currentState := issue.Fields.Status.ID
+		if currentState != desiredState.(string) {
+			if transitionMap, ok := d.GetOk(key); ok {
+				transitionFound := false
+				for state, transitionValue := range transitionMap.(map[string]interface{}) {
+					if state != currentState {
+						continue
+					}
+					transitionFound = true
+
+					var transitions []string
+					valueBytes := []byte(transitionValue.(string))
+					if json.Valid(valueBytes) {
+						if err := json.Unmarshal([]byte(transitionValue.(string)), &transitions); err != nil {
+							return err
+						}
+						for _, transition := range transitions {
+							res, err := config.jiraClient.Issue.DoTransition(issue.ID, transition)
+							if err != nil {
+								body, _ := ioutil.ReadAll(res.Body)
+								return errors.Wrapf(err, "transitioning jira issue failed: %s", body)
+							}
+						}
+					} else {
+						return errors.Errorf("%s: cannot unmarshal provided string: %s", key, valueBytes)
+					}
+					break
+				}
+				if !transitionFound {
+					return errors.Errorf("%s: cannot find transition sequence for state: %s", key, currentState)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func doStateTransitionOnDelete(id string, transitionMap *interface{}, config *Config, currentState string) error {
+	transitionFound := false
+	for state, transitionValue := range (*transitionMap).(map[string]interface{}) {
+		if state != currentState {
+			continue
+		}
+		transitionFound = true
+
+		var transitions []string
+		valueBytes := []byte(transitionValue.(string))
+		if json.Valid(valueBytes) {
+			if err := json.Unmarshal([]byte(transitionValue.(string)), &transitions); err != nil {
+				return err
+			}
+			for _, transition := range transitions {
+				res, err := config.jiraClient.Issue.DoTransition(id, transition)
+				if err != nil {
+					body, _ := ioutil.ReadAll(res.Body)
+					return errors.Wrapf(err, "transitioning on delete for jira issue failed: %s", body)
+				}
+			}
+		} else {
+			return errors.Errorf("delete_transition: cannot unmarshal provided string: %s", valueBytes)
+		}
+		break
+	}
+	if !transitionFound {
+		return errors.Errorf("delete_transition: cannot find transition sequence for state: %s", currentState)
+	}
+	return nil
+}
+
+func getCustomFields(resourceFieldsRaw *interface{}, issue *jira.Issue) (*map[string]string, error) {
+	incomingFields := make(map[string]string)
+	resourceFields := (*resourceFieldsRaw).(map[string]interface{})
+	for field := range issue.Fields.Unknowns {
+		if existingField, fieldExists := resourceFields[field]; fieldExists {
+			if value, valueExists := issue.Fields.Unknowns.Value(field); valueExists {
+				existingFieldBytes := []byte(existingField.(string))
+
+				if json.Valid(existingFieldBytes) {
+					var decodedExistingValue interface{}
+					if err := json.Unmarshal([]byte(existingField.(string)), &decodedExistingValue); err != nil {
+						return nil, err
+					}
+
+					marshalledValue, _ := json.Marshal(extractSameKeys(decodedExistingValue, value))
+					incomingFields[field] = string(marshalledValue)
+				} else {
+					switch value.(type) {
+					case string:
+						incomingFields[field] = value.(string)
+					case bool:
+						incomingFields[field] = fmt.Sprintf("%t", value.(bool))
+					case int:
+						incomingFields[field] = fmt.Sprintf("%d", value.(int))
+					case float32:
+						incomingFields[field] = fmt.Sprintf("%f", value.(float32))
+					case float64:
+						incomingFields[field] = fmt.Sprintf("%f", value.(float64))
+					case uint:
+						incomingFields[field] = fmt.Sprintf("%d", value.(uint))
+					}
+				}
+			}
+		}
+	}
+	return &incomingFields, nil
 }

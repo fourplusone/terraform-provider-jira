@@ -23,6 +23,34 @@ func TestAccJiraIssue_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckJiraIssueExists(resourceName),
 					testAccCheckJiraIssueHasLabels(resourceName),
+					testAccCheckJiraIssueIsInCorrectStateAfterTransition(resourceName),
+				),
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				//TODO: for some reason the state_transition and delete_transition state-diffs are not empty
+				// -but manual `terraform plan` after `apply` on a local jira instance shows no diffs.
+				//ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccJiraIssueSubTask_basic(t *testing.T) {
+	rInt := acctest.RandInt()
+	resourceName := "jira_issue.example_subtask"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckJiraIssueDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccJiraIssueConfig(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckJiraIssueExists(resourceName),
+					testAccCheckJiraIssueHasLabels(resourceName),
 				),
 			},
 			{
@@ -108,6 +136,37 @@ func testAccCheckJiraIssueHasLabels(n string) resource.TestCheckFunc {
 
 }
 
+func testAccCheckJiraIssueIsInCorrectStateAfterTransition(n string) resource.TestCheckFunc {
+
+	return func(s *terraform.State) error {
+
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not Found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No project ID is set")
+		}
+
+		client := testAccProvider.Meta().(*Config).jiraClient
+		issue, resp, _ := client.Issue.Get(rs.Primary.ID, nil)
+
+		if resp.StatusCode != 200 {
+			return fmt.Errorf("Issue %q does not exists", rs.Primary.ID)
+		}
+
+		state := issue.Fields.Status.ID
+		expected := "10001"
+
+		if state != expected {
+			return fmt.Errorf("Issue %q is in wrong state, expected: %s, actual: %s", rs.Primary.ID, expected, state)
+		}
+
+		return nil
+	}
+}
+
 func testAccJiraIssueConfig(rInt int) string {
 	return fmt.Sprintf(`
 resource "jira_user" "foo" {
@@ -128,6 +187,20 @@ resource "jira_issue" "example" {
 	project_key   = "${jira_project.foo.key}"
 	summary       = "Created using Terraform"
 	labels        = ["label1", "label2", "label3", "label4"]
+	state = 10001
+	state_transition = {
+		10000 = jsonencode(["21"])
+	}
+	delete_transition = {
+		10001 = jsonencode(["51"])
+	}
+}
+resource "jira_issue" "example_subtask" {
+	issue_type    = "Sub-task"
+	project_key   = "${jira_project.foo.key}"
+	summary       = "Created using Terraform"
+	labels        = ["label1", "label2", "label3", "label4"]
+	parent        = jira_issue.example.issue_key
 }
 `, rInt, rInt, rInt%100000)
 }

@@ -1,6 +1,13 @@
 PKG := $(shell go list ./... | grep -v vendor)
 TEST := $(shell go list ./... |grep -v vendor)
 
+HOSTNAME=idealo.de
+NAMESPACE=pt
+NAME=jira
+BINARY=terraform-provider-${NAME}
+VERSION=0.1
+OS_ARCH=darwin_amd64
+
 
 .PHONY: test
 
@@ -19,3 +26,6 @@ release: ## Build the go binaries for various platform
 
 test: ## Run tests
 	TF_ACC=1 go test -v $(TEST)
+install: build
+	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
+	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}

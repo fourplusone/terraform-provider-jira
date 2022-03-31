@@ -330,12 +330,95 @@ Enter the provider directory and run `make build` to build the provider
 $ make build
 ```
 
-## Rationale
-Working in Operations engineering organizations infrastructure is often driven by tickets. Why not track infrastructure using tickets but this time we will use code.
-This just showcases that you can pretty much Terraform anything!
+## Testing
 
+In order to run tests you need to run them against Jira Server.
+First follow the steps in [Run Jira Locally](#run-jira-locally) to have a working local instance.
 
-## Credits
+After that open new terminal, cd into project-root and run:
+```sh
+project-root$ make test JIRA_URL=http://localhost:8080 JIRA_USER=<USERNAME> JIRA_PASSWORD=<PASSWORD>
+```
 
-- Anubhav Mishra (anubhavmishra)
-- Matthias Bartelmess (fourplusone)
+## Install
+Makefile contains helper functions used to build, package and install the provider locally on your system.
+It's currently written for MacOS, but you can change the variables at the top of the file to match your `OS_ARCH`.
+You can find a full list of supported GO_ARCH [here](https://go.dev/doc/install/source#environment).
+
+### Mac
+Just run:
+```sh
+project-root$ make install
+```
+Jump to [Local Run](#local-run)
+
+### Linux
+Build the provider binary:
+```sh
+project-root$ go build -o terraform-provider-jira
+```
+
+Retrieve your system's OS and ARCH:
+```sh
+project-root$ export OS_ARCH="$(go env GOHOSTOS)_$(go env GOHOSTARCH)"
+```
+
+Create the appropriate subdirectory within the user plugins directory for the jira provider if it doesn't exist already:
+```sh
+project-root$ mkdir -p ~/.terraform.d/plugins/idealo.de/pt/jira/0.1/$OS_ARCH
+```
+
+Move the binary to the appropriate subdirectory within your user plugins directory:
+```sh
+project-root$ mv terraform-provider-jira ~/.terraform.d/plugins/idealo.de/pt/jira/0.1/$OS_ARCH
+```
+
+### Local Run
+
+First follow the steps in [Run Jira Locally](#run-jira-locally) to have a local instance.
+
+Cd into `examles/local-run/`
+
+Init Terraform:
+```sh
+examples/local-run$ terraform init
+```
+
+Apply the plan:
+```sh
+examples/local-run$ JIRA_USER=<USERNAME> JIRA_PASSWORD=<PASSWORD> terraform apply
+```
+
+Verify that resources have been created and are in a desired state.
+
+Destroy the plan:
+```sh
+examples/local-run$ JIRA_USER=<USERNAME> JIRA_PASSWORD=<PASSWORD> terraform destroy
+```
+
+## Run Jira Locally
+
+Run local docker instance:
+```sh
+$ docker run --publish 8080:8080 --name jira --rm -i -t frogbis/jira-software bash
+```
+Open your browser at: `localhost:8080`
+
+![jira welcome screen](./images/Jira_test_1.png)
+
+choose **Set it up for me** and hit **Continue to MyAtlassian**
+
+![jira license](./images/Jira_test_2.png)
+
+Choose settings as indicated above (**Server ID** is auto-generated) and hit **Generate License**.
+Confirm with a popped up window that you want to install license for localhost.
+
+![jira user setup](./images/Jira_test_3.png)
+
+Set up a new user that you'll be using to run your tests with and hit **Next**.
+
+Hit **Let's get started** in the next window.
+
+Login and create new project of any type.
+
+You are all set!!!
