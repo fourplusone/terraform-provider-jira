@@ -83,7 +83,7 @@ func resourceIssue() *schema.Resource {
 					return old == new
 				},
 			},
-			"state_transition": &schema.Schema{
+			"state_transitions": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
 				Elem: &schema.Schema{
@@ -91,7 +91,7 @@ func resourceIssue() *schema.Resource {
 					Required: true,
 				},
 			},
-			"delete_transition": &schema.Schema{
+			"delete_transitions": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
 				Elem: &schema.Schema{
@@ -334,7 +334,7 @@ func resourceIssueDelete(d *schema.ResourceData, m interface{}) error {
 
 	id := d.Id()
 
-	if transition, ok := d.GetOk("delete_transition"); ok {
+	if transition, ok := d.GetOk("delete_transitions"); ok {
 
 		issue, res, err := config.jiraClient.Issue.Get(id, nil)
 		if err != nil {
@@ -421,7 +421,7 @@ func setCustomFields(i *jira.Issue, fields *interface{}) error {
 }
 
 func doStateTransition(d *schema.ResourceData, issue *jira.Issue, config *Config) error {
-	key := "state_transition"
+	key := "state_transitions"
 	if desiredState, ok := d.GetOk("state"); ok {
 		currentState := issue.Fields.Status.ID
 		if currentState != desiredState.(string) {
@@ -482,12 +482,12 @@ func doStateTransitionOnDelete(id string, transitionMap *interface{}, config *Co
 				}
 			}
 		} else {
-			return errors.Errorf("delete_transition: cannot unmarshal provided string: %s", valueBytes)
+			return errors.Errorf("delete_transitions: cannot unmarshal provided string: %s", valueBytes)
 		}
 		break
 	}
 	if !transitionFound {
-		return errors.Errorf("delete_transition: cannot find transition sequence for state: %s", currentState)
+		return errors.Errorf("delete_transitions: cannot find transition sequence for state: %s", currentState)
 	}
 	return nil
 }

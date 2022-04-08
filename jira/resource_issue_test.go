@@ -188,10 +188,10 @@ resource "jira_issue" "example" {
 	summary       = "Created using Terraform"
 	labels        = ["label1", "label2", "label3", "label4"]
 	state = 10001
-	state_transition = {
+	state_transitions = {
 		10000 = jsonencode(["21"])
 	}
-	delete_transition = {
+	delete_transitions = {
 		10001 = jsonencode(["51"])
 	}
 }
