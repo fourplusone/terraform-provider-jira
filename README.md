@@ -2,9 +2,6 @@
 
 Terraform Provider for managing JIRA. (__[View on registry.terraform.io](https://registry.terraform.io/providers/fourplusone/jira/latest)__)
 
-__[Support this project on Patreon](https://www.patreon.com/fourplusone)__
-
-
 ## Data Sources
 
 - Issue Keys from JQL
