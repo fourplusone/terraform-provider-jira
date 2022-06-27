@@ -3,7 +3,7 @@ package jira
 import (
 	"fmt"
 	"strconv"
-
+	"log"
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/pkg/errors"
@@ -63,6 +63,9 @@ func resourceProject() *schema.Resource {
 		Read:   resourceProjectRead,
 		Update: resourceProjectUpdate,
 		Delete: resourceProjectDelete,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"project_id": &schema.Schema{
@@ -201,12 +204,11 @@ func resourceProjectCreate(d *schema.ResourceData, m interface{}) error {
 // resourceProjectRead reads issue details using jira api
 func resourceProjectRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
-
 	project, _, err := config.jiraClient.Project.Get(d.Id())
 	if err != nil {
 		return errors.Wrap(err, "getting jira project failed")
 	}
-
+	log.Printf("[INFO] Getting Project")
 	id, _ := strconv.Atoi(d.Id())
 	d.Set("project_id", id)
 	d.Set("key", project.Key)
