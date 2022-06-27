@@ -212,7 +212,7 @@ func resourceProjectRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("key", project.Key)
 	d.Set("name", project.Name)
 	d.Set("description", project.Description)
-	d.Set("lead", project.Lead)
+	d.Set("lead", project.Lead.Name)
 	d.Set("lead_account_id", project.Lead.AccountID)
 	d.Set("url", project.URL)
 	d.Set("assignee_type", project.AssigneeType)
