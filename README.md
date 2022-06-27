@@ -4,7 +4,6 @@ Terraform Provider for managing JIRA. (__[View on registry.terraform.io](https:/
 
 __[Support this project on Patreon](https://www.patreon.com/fourplusone)__
 
-[![CircleCI](https://circleci.com/gh/fourplusone/terraform-provider-jira.svg?style=svg)](https://circleci.com/gh/fourplusone/terraform-provider-jira)
 
 ## Data Sources
 
