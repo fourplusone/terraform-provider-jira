@@ -42,7 +42,7 @@ This can be used to interlink infrastructure management with JIRA issues closely
 
 ## Install
 
-## Terraform v0.13
+## Terraform v0.13 or newer
 
 Copy this code into yout terraform configuration file (for example `main.tf`)
 
@@ -51,33 +51,13 @@ terraform {
   required_providers {
     jira = {
       source = "fourplusone/jira"
-      version = "0.1.14"
+      version = "0.1.16"
     }
   }
 }
 ```
 
 Run `terraform init`
-
-## Terraform v0.12 
-
-* Download `terraform-provider-jira` binary from [Github](https://github.com/fourplusone/terraform-provider-jira/releases)
-* Unzip the zip file
-* Then move `terraform-provider-jira` binary to `$HOME/.terraform.d/plugins` directory
-
-```bash
-mkdir -p $HOME/.terraform.d/plugins
-mv terraform-provider-jira $HOME/.terraform.d/plugins/terraform-provider-jira
-
-```
-
-* Run `terraform init` in your terraform project
-
-```bash
-terraform init
-```
-
-Used to initialize the plugin
 
 ## Example Usage
 
