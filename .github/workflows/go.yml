@@ -1,4 +1,4 @@
-name: Go
+name: Build & Tests
 
 on:
   push:
@@ -36,14 +36,6 @@ jobs:
      uses: actions/setup-go@v2
      with:
        go-version: 1.18
-
-   - name: Wait for JIRA
-     run: |
-       while :
-       do
-       curl http://localhost:2990/jira && break;
-       sleep 10
-       done
 
    - name: Test
      env:
