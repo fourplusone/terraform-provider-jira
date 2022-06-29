@@ -1,5 +1,7 @@
 # terraform-provider-jira
 
+[![Build & Tests](https://github.com/fourplusone/terraform-provider-jira/actions/workflows/go.yml/badge.svg)](https://github.com/fourplusone/terraform-provider-jira/actions/workflows/go.yml)
+
 Terraform Provider for managing JIRA. (__[View on registry.terraform.io](https://registry.terraform.io/providers/fourplusone/jira/latest)__)
 
 ## Data Sources

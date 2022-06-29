@@ -1,8 +1,8 @@
-name: Go
+name: Build & Tests
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, ci-testing ]
   pull_request:
     branches: [ master ]
 
@@ -17,4 +17,29 @@ jobs:
       with:
         go-version: 1.18
     - name: Build
-      run: make
+      run: make build
+  test:
+   services:
+     jira:
+       image: docker.pkg.github.com/fourplusone/docker-atlas/jira:latest
+       options: --tty --health-start-period=10m
+       credentials:
+         username: ${{ github.actor }}
+         password: ${{ secrets.GITHUB_TOKEN }}
+       ports:
+       - 2990:2990
+   runs-on: ubuntu-latest
+   steps:
+   - uses: actions/checkout@v2
+
+   - name: Set up Go
+     uses: actions/setup-go@v2
+     with:
+       go-version: 1.18
+
+   - name: Test
+     env:
+       JIRA_URL: http://localhost:2990/jira/
+       JIRA_USER: admin
+       JIRA_PASSWORD: admin
+     run: make test
