@@ -2,7 +2,7 @@ name: Go
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, ci-testing ]
   pull_request:
     branches: [ master ]
 
