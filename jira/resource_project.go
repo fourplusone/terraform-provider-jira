@@ -140,7 +140,7 @@ func resourceProject() *schema.Resource {
 
 // resourceProjectCreate creates a new jira issue using the jira api
 func resourceProjectCreate(d *schema.ResourceData, m interface{}) error {
-	config := m.(*Config)
+	client := m.(*Config).jiraClient
 
 	sharedProjectID, useSharedConfiguration := d.GetOk("shared_configuration_project_id")
 	if useSharedConfiguration {
@@ -155,7 +155,7 @@ func resourceProjectCreate(d *schema.ResourceData, m interface{}) error {
 
 		endpoint := projectWithSharedConfigurationAPIEndpoint(sharedProjectID.(int))
 
-		err := request(config.jiraClient, "POST", endpoint, project, returnedProject)
+		err := request(client, "POST", endpoint, project, returnedProject)
 
 		if err != nil {
 			return errors.Wrap(err, "Request failed")
@@ -189,7 +189,7 @@ func resourceProjectCreate(d *schema.ResourceData, m interface{}) error {
 
 		returnedProject := new(IDResponse)
 
-		err := request(config.jiraClient, "POST", projectAPIEndpoint, project, returnedProject)
+		err := request(client, "POST", projectAPIEndpoint, project, returnedProject)
 		if err != nil {
 			return errors.Wrap(err, "Request failed")
 		}
