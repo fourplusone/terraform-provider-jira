@@ -22,7 +22,7 @@ jobs:
    services:
      jira:
        image: docker.pkg.github.com/fourplusone/docker-atlas/jira:latest
-       options: --tty
+       options: --tty --health-start-period=10m
        credentials:
          username: ${{ github.actor }}
          password: ${{ secrets.GITHUB_TOKEN }}
