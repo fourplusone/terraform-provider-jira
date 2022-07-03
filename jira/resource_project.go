@@ -3,10 +3,32 @@ package jira
 import (
 	"fmt"
 	"strconv"
+
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/pkg/errors"
 )
+
+// Project represents a Jira Project.
+type Project struct {
+	Expand          string                  `json:"expand,omitempty" structs:"expand,omitempty"`
+	Self            string                  `json:"self,omitempty" structs:"self,omitempty"`
+	ID              string                  `json:"id,omitempty" structs:"id,omitempty"`
+	Key             string                  `json:"key,omitempty" structs:"key,omitempty"`
+	Description     string                  `json:"description,omitempty" structs:"description,omitempty"`
+	Lead            jira.User               `json:"lead,omitempty" structs:"lead,omitempty"`
+	Components      []jira.ProjectComponent `json:"components,omitempty" structs:"components,omitempty"`
+	IssueTypes      []jira.IssueType        `json:"issueTypes,omitempty" structs:"issueTypes,omitempty"`
+	URL             string                  `json:"url,omitempty" structs:"url,omitempty"`
+	Email           string                  `json:"email,omitempty" structs:"email,omitempty"`
+	AssigneeType    string                  `json:"assigneeType,omitempty" structs:"assigneeType,omitempty"`
+	Versions        []jira.Version          `json:"versions,omitempty" structs:"versions,omitempty"`
+	Name            string                  `json:"name,omitempty" structs:"name,omitempty"`
+	Roles           map[string]string       `json:"roles,omitempty" structs:"roles,omitempty"`
+	AvatarUrls      jira.AvatarUrls         `json:"avatarUrls,omitempty" structs:"avatarUrls,omitempty"`
+	ProjectCategory ProjectCategory         `json:"projectCategory,omitempty" structs:"projectCategory,omitempty"`
+	ProjectTypeKey  string                  `json:"projectTypeKey,omitempty" structs:"projectTypeKey,omitempty"`
+}
 
 // ProjectRequest The struct sent to the JIRA instance to create a new Project
 type ProjectRequest struct {
@@ -87,10 +109,12 @@ func resourceProject() *schema.Resource {
 			"project_type_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
+				Default:  "business",
 			},
 			"project_template_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
+				ForceNew: true,
 			},
 			"description": &schema.Schema{
 				Type:     schema.TypeString,
@@ -203,7 +227,14 @@ func resourceProjectCreate(d *schema.ResourceData, m interface{}) error {
 // resourceProjectRead reads issue details using jira api
 func resourceProjectRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
-	project, _, err := config.jiraClient.Project.Get(d.Id())
+	project := &Project{}
+
+	urlStr := fmt.Sprintf("%s/%s", projectAPIEndpoint, d.Id())
+	err := request(config.jiraClient, "GET", urlStr, nil, project)
+	if err != nil {
+		return errors.Wrap(err, "Request failed")
+	}
+
 	if err != nil {
 		return errors.Wrap(err, "getting jira project failed")
 	}
@@ -217,6 +248,7 @@ func resourceProjectRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("url", project.URL)
 	d.Set("assignee_type", project.AssigneeType)
 	d.Set("category_id", project.ProjectCategory.ID)
+	d.Set("project_type_key", project.ProjectTypeKey)
 
 	issuesecuritylevelscheme, err := GetJiraResourceID(config.jiraClient, fmt.Sprintf("%s/%s/issuesecuritylevelscheme", projectAPIEndpoint, d.Id()))
 	if err != nil {
@@ -266,6 +298,14 @@ func resourceProjectUpdate(d *schema.ResourceData, m interface{}) error {
 	err := request(config.jiraClient, "PUT", urlStr, project, returnedProject)
 	if err != nil {
 		return errors.Wrap(err, "Request failed")
+	}
+
+	if d.HasChange("project_type_key") {
+		urlStr := fmt.Sprintf("%s/%s/type/%s", projectAPIEndpoint, d.Id(), d.Get("project_type_key"))
+		err := request(config.jiraClient, "PUT", urlStr, nil, nil)
+		if err != nil {
+			return errors.Wrap(err, "Request failed")
+		}
 	}
 
 	return resourceProjectRead(d, m)

@@ -11,7 +11,7 @@ import (
 
 func TestAccJiraProject_basic(t *testing.T) {
 	rInt := acctest.RandInt()
-
+	resourceName := "jira_project.foo"
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -20,8 +20,20 @@ func TestAccJiraProject_basic(t *testing.T) {
 			{
 				Config: testAccJiraProjectConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckJiraProjectExists("jira_project.foo"),
+					testAccCheckJiraProjectExists(resourceName),
 				),
+			},
+			{
+				Config: testAccJiraProjectConfigUpdate(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckJiraProjectExists(resourceName),
+				),
+			},
+			{
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"project_template_key"},
 			},
 		},
 	})
@@ -101,6 +113,23 @@ resource "jira_project" "foo" {
   key = "PX%d"
   lead = "${jira_user.foo.name}"
   project_type_key = "business"
+  project_template_key = "com.atlassian.jira-core-project-templates:jira-core-project-management"
+}`, rInt, rInt, rInt%100000)
+}
+
+func testAccJiraProjectConfigUpdate(rInt int) string {
+	return fmt.Sprintf(`
+
+resource "jira_user" "foo" {
+	name = "project-user-%d"
+	email = "example@example.org"
+}
+
+resource "jira_project" "foo" {
+  name = "foo-changed-name-%d"
+  key = "PX%d"
+  lead = "${jira_user.foo.name}"
+  project_type_key = "software"
   project_template_key = "com.atlassian.jira-core-project-templates:jira-core-project-management"
 }`, rInt, rInt, rInt%100000)
 }
