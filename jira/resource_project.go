@@ -2,7 +2,6 @@ package jira
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -239,7 +238,6 @@ func resourceProjectRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "getting jira project failed")
 	}
-	log.Printf("[INFO] Getting Project")
 	id, _ := strconv.Atoi(d.Id())
 	d.Set("project_id", id)
 	d.Set("key", project.Key)
