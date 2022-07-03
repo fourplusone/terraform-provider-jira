@@ -12,6 +12,7 @@ import (
 func TestAccJiraUser_basic(t *testing.T) {
 	// var group gitlab.User
 	rInt := acctest.RandInt()
+	resourceName := "jira_user.foo"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -21,8 +22,13 @@ func TestAccJiraUser_basic(t *testing.T) {
 			{
 				Config: testAccJiraUserConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckJiraUserExists("jira_user.foo"),
+					testAccCheckJiraUserExists(resourceName),
 				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
