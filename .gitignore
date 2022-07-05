@@ -5,3 +5,4 @@ artifacts/
 .terraform/
 .terraform.d
 vendor/
+build.sh

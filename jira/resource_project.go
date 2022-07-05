@@ -45,7 +45,7 @@ type ProjectRequest struct {
 	IssueSecurityScheme int    `json:"issueSecurityScheme,omitempty" structs:"issueSecurityScheme,omitempty"`
 	PermissionScheme    int    `json:"permissionScheme,omitempty" structs:"permissionScheme,omitempty"`
 	NotificationScheme  int    `json:"notificationScheme,omitempty" structs:"notificationScheme,omitempty"`
-	CategoryID          int    `json:"categoryId,omitempty" structs:"categoryId,omitempty"`
+	CategoryID          string    `json:"categoryId,omitempty" structs:"categoryId,omitempty"`
 }
 
 type SharedConfigurationProjectResponse struct {
@@ -154,7 +154,7 @@ func resourceProject() *schema.Resource {
 				Optional: true,
 			},
 			"category_id": &schema.Schema{
-				Type:     schema.TypeInt,
+				Type:     schema.TypeString,
 				Optional: true,
 			},
 		},
@@ -207,7 +207,7 @@ func resourceProjectCreate(d *schema.ResourceData, m interface{}) error {
 			IssueSecurityScheme: d.Get("issue_security_scheme").(int),
 			PermissionScheme:    d.Get("permission_scheme").(int),
 			NotificationScheme:  d.Get("notification_scheme").(int),
-			CategoryID:          d.Get("category_id").(int),
+			CategoryID:          d.Get("category_id").(string),
 		}
 
 		returnedProject := new(IDResponse)
@@ -289,7 +289,7 @@ func resourceProjectUpdate(d *schema.ResourceData, m interface{}) error {
 		IssueSecurityScheme: d.Get("issue_security_scheme").(int),
 		PermissionScheme:    d.Get("permission_scheme").(int),
 		NotificationScheme:  d.Get("notification_scheme").(int),
-		CategoryID:          d.Get("category_id").(int),
+		CategoryID:          d.Get("category_id").(string),
 	}
 	urlStr := fmt.Sprintf("%s/%s", projectAPIEndpoint, d.Id())
 
