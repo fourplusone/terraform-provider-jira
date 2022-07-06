@@ -108,12 +108,18 @@ resource "jira_user" "foo" {
 	email = "example@example.org"
 }
 
+resource "jira_project_category" "category" {
+	name = "Managed"
+  	description = "Managed Projects"
+}
+
 resource "jira_project" "foo" {
   name = "foo-name-%d"
   key = "PX%d"
   lead = "${jira_user.foo.name}"
   project_type_key = "business"
   project_template_key = "com.atlassian.jira-core-project-templates:jira-core-project-management"
+  category_id = "${jira_project_category.category.id}"
 }`, rInt, rInt, rInt%100000)
 }
 
@@ -125,12 +131,18 @@ resource "jira_user" "foo" {
 	email = "example@example.org"
 }
 
+resource "jira_project_category" "category" {
+	name = "Managed"
+  	description = "Managed Projects"
+}
+
 resource "jira_project" "foo" {
   name = "foo-changed-name-%d"
   key = "PX%d"
   lead = "${jira_user.foo.name}"
   project_type_key = "software"
   project_template_key = "com.atlassian.jira-core-project-templates:jira-core-project-management"
+  category_id = "${jira_project_category.category.id}"
 }`, rInt, rInt, rInt%100000)
 }
 
