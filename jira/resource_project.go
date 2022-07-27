@@ -3,7 +3,7 @@ package jira
 import (
 	"fmt"
 	"strconv"
-
+	"strings"
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/pkg/errors"
@@ -231,8 +231,16 @@ func resourceProjectRead(d *schema.ResourceData, m interface{}) error {
 
 	urlStr := fmt.Sprintf("%s/%s", projectAPIEndpoint, d.Id())
 	err := request(config.jiraClient, "GET", urlStr, nil, project)
+
 	if err != nil {
+		errMessage := err.Error()
+		if strings.Contains(errMessage, "Status code: 404") {
+			d.SetId("")
+			return nil
+		}
 		return errors.Wrap(err, "Request failed")
+		d.SetId("")
+		return nil
 	}
 
 	if err != nil {
