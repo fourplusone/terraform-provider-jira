@@ -1,6 +1,18 @@
 PKG := $(shell go list ./... | grep -v vendor)
 TEST := $(shell go list ./... |grep -v vendor)
 
+ifndef JIRA_URL
+JIRA_URL := http://127.0.0.1:2990/jira
+endif
+
+ifndef JIRA_USER
+JIRA_USER := admin
+endif
+
+ifndef JIRA_PASSWORD
+JIRA_PASSWORD := admin
+endif
+
 
 .PHONY: test
 
@@ -18,4 +30,4 @@ release: ## Build the go binaries for various platform
 	./scripts/release.sh
 
 test: ## Run tests
-	TF_ACC=1 go test -v $(TEST)
+	TF_ACC=1 JIRA_URL="$(JIRA_URL)" JIRA_PASSWORD="$(JIRA_PASSWORD)" JIRA_USER="$(JIRA_USER)" go test -v $(TEST)

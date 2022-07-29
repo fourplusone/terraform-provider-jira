@@ -308,6 +308,24 @@ Enter the provider directory and run `make build` to build the provider
 $ make build
 ```
 
+## Testing
+Testing requires a JIRA instance. To set up a temporary, local JIRA instance you can use the [Docker Atlas](https://github.com/fourplusone/docker-atlas) container:
+
+```sh
+$ git clone https://github.com/fourplusone/docker-atlas
+$ cd docker-atlas
+$ docker build -f jira.dockerfile . -t jira-docker
+$ docker run --rm -t -p 2990:2990 jira-docker
+```
+
+Building and starting the JIRA instance will take several minutes.
+
+To run the tests, run `make test` inside the provider folder
+
+```sh
+$ make test
+```
+
 ## Rationale
 Working in Operations engineering organizations infrastructure is often driven by tickets. Why not track infrastructure using tickets but this time we will use code.
 This just showcases that you can pretty much Terraform anything!
