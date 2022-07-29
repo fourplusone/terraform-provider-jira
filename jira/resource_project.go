@@ -45,7 +45,7 @@ type ProjectRequest struct {
 	IssueSecurityScheme int    `json:"issueSecurityScheme,omitempty" structs:"issueSecurityScheme,omitempty"`
 	PermissionScheme    int    `json:"permissionScheme,omitempty" structs:"permissionScheme,omitempty"`
 	NotificationScheme  int    `json:"notificationScheme,omitempty" structs:"notificationScheme,omitempty"`
-	CategoryID          string    `json:"categoryId,omitempty" structs:"categoryId,omitempty"`
+	CategoryID          string `json:"categoryId,omitempty" structs:"categoryId,omitempty"`
 }
 
 type SharedConfigurationProjectResponse struct {
@@ -231,7 +231,12 @@ func resourceProjectRead(d *schema.ResourceData, m interface{}) error {
 
 	urlStr := fmt.Sprintf("%s/%s", projectAPIEndpoint, d.Id())
 	err := request(config.jiraClient, "GET", urlStr, nil, project)
+
 	if err != nil {
+		if errors.Is(err, ResourceNotFoundError) {
+			d.SetId("")
+			return nil
+		}
 		return errors.Wrap(err, "Request failed")
 	}
 

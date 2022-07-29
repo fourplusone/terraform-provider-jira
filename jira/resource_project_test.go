@@ -39,6 +39,31 @@ func TestAccJiraProject_basic(t *testing.T) {
 	})
 }
 
+func TestAccJiraProject_deleted(t *testing.T) {
+	rInt := acctest.RandInt()
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckJiraProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccJiraProjectConfig(rInt),
+			},
+			{
+				PreConfig: func() {
+					urlStr := fmt.Sprintf("%s/PX%d", projectAPIEndpoint, rInt%100000)
+					jiraClient := testAccProvider.Meta().(*Config).jiraClient
+					err := request(jiraClient, "DELETE", urlStr, nil, nil)
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				Config: testAccJiraProjectConfig(rInt),
+			},
+		},
+	})
+}
+
 func TestAccJiraProject_shared(t *testing.T) {
 	rInt := acctest.RandInt()
 
@@ -109,7 +134,7 @@ resource "jira_user" "foo" {
 }
 
 resource "jira_project_category" "category" {
-	name = "Managed"
+	name = "Managed %d"
   	description = "Managed Projects"
 }
 
@@ -120,7 +145,7 @@ resource "jira_project" "foo" {
   project_type_key = "business"
   project_template_key = "com.atlassian.jira-core-project-templates:jira-core-project-management"
   category_id = "${jira_project_category.category.id}"
-}`, rInt, rInt, rInt%100000)
+}`, rInt, rInt, rInt, rInt%100000)
 }
 
 func testAccJiraProjectConfigUpdate(rInt int) string {
@@ -132,7 +157,7 @@ resource "jira_user" "foo" {
 }
 
 resource "jira_project_category" "category" {
-	name = "Managed"
+	name = "Managed %d"
   	description = "Managed Projects"
 }
 
@@ -143,7 +168,7 @@ resource "jira_project" "foo" {
   project_type_key = "software"
   project_template_key = "com.atlassian.jira-core-project-templates:jira-core-project-management"
   category_id = "${jira_project_category.category.id}"
-}`, rInt, rInt, rInt%100000)
+}`, rInt, rInt, rInt, rInt%100000)
 }
 
 func testAccJiraSharedProjectConfig(rInt int) string {
