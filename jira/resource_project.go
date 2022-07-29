@@ -3,7 +3,7 @@ package jira
 import (
 	"fmt"
 	"strconv"
-	"strings"
+
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/pkg/errors"
@@ -45,7 +45,7 @@ type ProjectRequest struct {
 	IssueSecurityScheme int    `json:"issueSecurityScheme,omitempty" structs:"issueSecurityScheme,omitempty"`
 	PermissionScheme    int    `json:"permissionScheme,omitempty" structs:"permissionScheme,omitempty"`
 	NotificationScheme  int    `json:"notificationScheme,omitempty" structs:"notificationScheme,omitempty"`
-	CategoryID          string    `json:"categoryId,omitempty" structs:"categoryId,omitempty"`
+	CategoryID          string `json:"categoryId,omitempty" structs:"categoryId,omitempty"`
 }
 
 type SharedConfigurationProjectResponse struct {
@@ -233,14 +233,11 @@ func resourceProjectRead(d *schema.ResourceData, m interface{}) error {
 	err := request(config.jiraClient, "GET", urlStr, nil, project)
 
 	if err != nil {
-		errMessage := err.Error()
-		if strings.Contains(errMessage, "Status code: 404") {
+		if errors.Is(err, ResourceNotFoundError) {
 			d.SetId("")
 			return nil
 		}
 		return errors.Wrap(err, "Request failed")
-		d.SetId("")
-		return nil
 	}
 
 	if err != nil {
