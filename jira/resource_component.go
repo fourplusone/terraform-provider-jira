@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// JIRA field
 func resourceComponent() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceComponentCreate,
