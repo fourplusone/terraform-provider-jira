@@ -12,6 +12,7 @@ import (
 )
 
 // API Endpoints
+const componentAPIEndpoint = "rest/api/2/component"
 const filterAPIEndpoint = "/rest/api/2/filter"
 const groupAPIEndpoint = "/rest/api/2/group"
 const groupUserAPIEndpoint = "/rest/api/2/group/user"
