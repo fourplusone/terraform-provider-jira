@@ -29,7 +29,6 @@ func TestAccJiraComponent_basic(t *testing.T) {
 			{
 				Config: testAccJiraComponentConfigB(rInt),
 			},
-
 			{
 				ResourceName:      resourceName,
 				ImportState:       true,
@@ -101,23 +100,21 @@ func testEnvConfig(rInt int) string {
 		name = "u2-name-%d"
 		email = "example@example.org"
 	}
-
+	
 	resource "jira_project" "p1" {
 		name = "p1-name-%d"
 		lead = jira_user.u1.name
-		permission_scheme = 10000
 		key = "PX%d"
-		project_type_key = "software"
-		project_template_key = "com.pyxis.greenhopper.jira:basic-software-development-template"
+		project_type_key = "business"
+		project_template_key = "com.atlassian.jira-core-project-templates:jira-core-project-management"
 	}
 	
 	resource "jira_project" "p2" {
 		name = "p2-name-%d"
 		lead = jira_user.u2.name
-		permission_scheme = 10000
 		key = "PZ%d"
-		project_type_key = "software"
-		project_template_key = "com.pyxis.greenhopper.jira:basic-software-development-template"
+		project_type_key = "business"
+		project_template_key = "com.atlassian.jira-core-project-templates:jira-core-project-management"
 	  }
 
 	`, rInt, rInt, rInt, rInt%100000, rInt, rInt%100000)
