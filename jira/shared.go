@@ -39,6 +39,26 @@ func filterPermissionEndpoint(filterID string) string {
 
 }
 
+type resourceNotFoundError struct {
+	wrapped error
+}
+
+func (r *resourceNotFoundError) Error() string {
+	return "Resource not found"
+}
+
+func (r *resourceNotFoundError) Unwrap() error {
+	return r.wrapped
+}
+
+func (r *resourceNotFoundError) Is(e error) bool {
+	return e == ResourceNotFoundError
+}
+
+var (
+	ResourceNotFoundError = &resourceNotFoundError{} // Constant to use with errors.Is and errors.As
+)
+
 func request(client *jira.Client, method string, endpoint string, in interface{}, out interface{}) error {
 
 	req, err := client.NewRequest(method, endpoint, in)
@@ -49,7 +69,6 @@ func request(client *jira.Client, method string, endpoint string, in interface{}
 
 	res, err := client.Do(req, out)
 	if err != nil {
-
 		if in != nil && res != nil {
 			typeName := reflect.TypeOf(in).Name()
 			body, readErr := ioutil.ReadAll(res.Response.Body)
@@ -57,8 +76,12 @@ func request(client *jira.Client, method string, endpoint string, in interface{}
 				return errors.Wrapf(readErr, "Creating %s Request failed", typeName)
 			}
 			return errors.Wrapf(err, "Creating %s Request failed: %s", typeName, body)
-
 		}
+
+		if res.StatusCode == 404 {
+			return &resourceNotFoundError{err}
+		}
+
 		return errors.Wrapf(err, "Creating Request failed")
 	}
 

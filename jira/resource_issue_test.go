@@ -11,6 +11,7 @@ import (
 
 func TestAccJiraIssue_basic(t *testing.T) {
 	rInt := acctest.RandInt()
+	resourceName := "jira_issue.example"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -20,8 +21,14 @@ func TestAccJiraIssue_basic(t *testing.T) {
 			{
 				Config: testAccJiraIssueConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckJiraIssueExists("jira_issue.example"),
+					testAccCheckJiraIssueExists(resourceName),
+					testAccCheckJiraIssueHasLabels(resourceName),
 				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -70,9 +77,39 @@ func testAccCheckJiraIssueExists(n string) resource.TestCheckFunc {
 
 }
 
+func testAccCheckJiraIssueHasLabels(n string) resource.TestCheckFunc {
+
+	return func(s *terraform.State) error {
+
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not Found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No project ID is set")
+		}
+
+		client := testAccProvider.Meta().(*Config).jiraClient
+		issue, resp, _ := client.Issue.Get(rs.Primary.ID, nil)
+
+		if resp.StatusCode != 200 {
+			return fmt.Errorf("Issue %q does not exists", rs.Primary.ID)
+		}
+
+		labels := issue.Fields.Labels
+
+		if labels == nil || len(labels) == 0 {
+			return fmt.Errorf("Issue %q does not have any labels", rs.Primary.ID)
+		}
+
+		return nil
+	}
+
+}
+
 func testAccJiraIssueConfig(rInt int) string {
 	return fmt.Sprintf(`
-
 resource "jira_user" "foo" {
 	name = "project-user-%d"
 	email = "example@example.org"
@@ -87,8 +124,10 @@ resource "jira_project" "foo" {
 }
 
 resource "jira_issue" "example" {
-	issue_type  = "Task"
-	project_key = "${jira_project.foo.key}"
-	summary     = "Created using Terraform"
-  }`, rInt, rInt, rInt%100000)
+	issue_type    = "Task"
+	project_key   = "${jira_project.foo.key}"
+	summary       = "Created using Terraform"
+	labels        = ["label1", "label2", "label3", "label4"]
+}
+`, rInt, rInt, rInt%100000)
 }

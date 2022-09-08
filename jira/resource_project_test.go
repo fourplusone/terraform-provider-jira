@@ -11,7 +11,7 @@ import (
 
 func TestAccJiraProject_basic(t *testing.T) {
 	rInt := acctest.RandInt()
-
+	resourceName := "jira_project.foo"
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -20,8 +20,45 @@ func TestAccJiraProject_basic(t *testing.T) {
 			{
 				Config: testAccJiraProjectConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckJiraProjectExists("jira_project.foo"),
+					testAccCheckJiraProjectExists(resourceName),
 				),
+			},
+			{
+				Config: testAccJiraProjectConfigUpdate(rInt),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckJiraProjectExists(resourceName),
+				),
+			},
+			{
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"project_template_key"},
+			},
+		},
+	})
+}
+
+func TestAccJiraProject_deleted(t *testing.T) {
+	rInt := acctest.RandInt()
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckJiraProjectDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccJiraProjectConfig(rInt),
+			},
+			{
+				PreConfig: func() {
+					urlStr := fmt.Sprintf("%s/PX%d", projectAPIEndpoint, rInt%100000)
+					jiraClient := testAccProvider.Meta().(*Config).jiraClient
+					err := request(jiraClient, "DELETE", urlStr, nil, nil)
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+				Config: testAccJiraProjectConfig(rInt),
 			},
 		},
 	})
@@ -96,13 +133,42 @@ resource "jira_user" "foo" {
 	email = "example@example.org"
 }
 
+resource "jira_project_category" "category" {
+	name = "Managed %d"
+  	description = "Managed Projects"
+}
+
 resource "jira_project" "foo" {
   name = "foo-name-%d"
   key = "PX%d"
   lead = "${jira_user.foo.name}"
   project_type_key = "business"
   project_template_key = "com.atlassian.jira-core-project-templates:jira-core-project-management"
-}`, rInt, rInt, rInt%100000)
+  category_id = "${jira_project_category.category.id}"
+}`, rInt, rInt, rInt, rInt%100000)
+}
+
+func testAccJiraProjectConfigUpdate(rInt int) string {
+	return fmt.Sprintf(`
+
+resource "jira_user" "foo" {
+	name = "project-user-%d"
+	email = "example@example.org"
+}
+
+resource "jira_project_category" "category" {
+	name = "Managed %d"
+  	description = "Managed Projects"
+}
+
+resource "jira_project" "foo" {
+  name = "foo-changed-name-%d"
+  key = "PX%d"
+  lead = "${jira_user.foo.name}"
+  project_type_key = "software"
+  project_template_key = "com.atlassian.jira-core-project-templates:jira-core-project-management"
+  category_id = "${jira_project_category.category.id}"
+}`, rInt, rInt, rInt, rInt%100000)
 }
 
 func testAccJiraSharedProjectConfig(rInt int) string {

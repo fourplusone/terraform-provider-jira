@@ -1,14 +1,13 @@
 # terraform-provider-jira
 
+[![Build & Tests](https://github.com/fourplusone/terraform-provider-jira/actions/workflows/go.yml/badge.svg)](https://github.com/fourplusone/terraform-provider-jira/actions/workflows/go.yml)
+
 Terraform Provider for managing JIRA. (__[View on registry.terraform.io](https://registry.terraform.io/providers/fourplusone/jira/latest)__)
-
-__[Support this project on Patreon](https://www.patreon.com/fourplusone)__
-
-[![CircleCI](https://circleci.com/gh/fourplusone/terraform-provider-jira.svg?style=svg)](https://circleci.com/gh/fourplusone/terraform-provider-jira)
 
 ## Data Sources
 
 - Issue Keys from JQL
+- Custom Fields
 
 ## Resources
 
@@ -42,7 +41,7 @@ This can be used to interlink infrastructure management with JIRA issues closely
 
 ## Install
 
-## Terraform v0.13
+## Terraform v0.13 or newer
 
 Copy this code into yout terraform configuration file (for example `main.tf`)
 
@@ -51,33 +50,13 @@ terraform {
   required_providers {
     jira = {
       source = "fourplusone/jira"
-      version = "0.1.14"
+      version = "0.1.16"
     }
   }
 }
 ```
 
 Run `terraform init`
-
-## Terraform v0.12 
-
-* Download `terraform-provider-jira` binary from [Github](https://github.com/fourplusone/terraform-provider-jira/releases)
-* Unzip the zip file
-* Then move `terraform-provider-jira` binary to `$HOME/.terraform.d/plugins` directory
-
-```bash
-mkdir -p $HOME/.terraform.d/plugins
-mv terraform-provider-jira $HOME/.terraform.d/plugins/terraform-provider-jira
-
-```
-
-* Run `terraform init` in your terraform project
-
-```bash
-terraform init
-```
-
-Used to initialize the plugin
 
 ## Example Usage
 
@@ -145,6 +124,20 @@ resource "jira_comment" "example_comment" {
 resource "jira_issue" "another_example" {
   issue_type  = "${jira_issue_type.task.name}"
   summary     = "Also Created using Terraform"
+  labels      = ["label1", "label2"]
+  project_key = "PROJ"
+}
+
+data "jira_field" "epic_link" {
+  name = "Epic Link"
+}
+
+resource "jira_issue" "custom_fields_example" {
+  issue_type  = "${jira_issue_type.task.name}"
+  summary     = "Also Created using Terraform"
+  fields      = {
+    (jira_field.epic_link.id) = jira_issue.example_epic.issue_key
+  }
   project_key = "PROJ"
 }
 
@@ -313,6 +306,24 @@ Enter the provider directory and run `make build` to build the provider
 
 ```sh
 $ make build
+```
+
+## Testing
+Testing requires a JIRA instance. To set up a temporary, local JIRA instance you can use the [Docker Atlas](https://github.com/fourplusone/docker-atlas) container:
+
+```sh
+$ git clone https://github.com/fourplusone/docker-atlas
+$ cd docker-atlas
+$ docker build -f jira.dockerfile . -t jira-docker
+$ docker run --rm -t -p 2990:2990 jira-docker
+```
+
+Building and starting the JIRA instance will take several minutes.
+
+To run the tests, run `make test` inside the provider folder
+
+```sh
+$ make test
 ```
 
 ## Rationale

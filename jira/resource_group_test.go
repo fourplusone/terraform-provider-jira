@@ -12,6 +12,7 @@ import (
 func TestAccJiraGroup_basic(t *testing.T) {
 	// var group gitlab.Group
 	rInt := acctest.RandInt()
+	resourceName := "jira_group.foo"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -21,8 +22,13 @@ func TestAccJiraGroup_basic(t *testing.T) {
 			{
 				Config: testAccJiraGroupConfig(rInt),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckJiraGroupExists("jira_group.foo"),
+					testAccCheckJiraGroupExists(resourceName),
 				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})

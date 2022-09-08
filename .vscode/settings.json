@@ -1,0 +1,10 @@
+{
+    "makefile.extensionOutputFolder": "./.vscode",
+    "go.testEnvVars": {
+        "TF_ACC": "1",
+        "JIRA_URL": "http://127.0.0.1:2990/jira",
+        "JIRA_USER": "admin",
+        "JIRA_PASSWORD": "admin"
+    },
+    "go.testFlags": ["-v"],
+}
