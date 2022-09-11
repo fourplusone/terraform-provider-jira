@@ -60,31 +60,37 @@ func resourceFilter() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Name of the filter",
 			},
 			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Description of the filter",
 			},
 			"jql": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "JQL expression of the filter",
 			},
 			"favourite": &schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Whether the filter is marked as favorite",
 			},
 			"permissions": &schema.Schema{
-				Type:     schema.TypeSet,
-				Optional: true,
-				Set:      resourceFilterPermissionsHash,
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Set:         resourceFilterPermissionsHash,
+				Description: "Filter permissions",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"type": &schema.Schema{
-							Type:     schema.TypeString,
-							Required: true,
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "Type of the permission. Needs to be one of global, group, project, project_role or authenticated",
 							ValidateFunc: func(v interface{}, s string) ([]string, []error) {
 								if !(v.(string) == "global" ||
 									v.(string) == "group" ||
@@ -97,8 +103,9 @@ func resourceFilter() *schema.Resource {
 							},
 						},
 						"project_id": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "All Members of the project with the given ID can access the filter",
 						},
 
 						"project_role_id": &schema.Schema{
@@ -107,8 +114,9 @@ func resourceFilter() *schema.Resource {
 						},
 
 						"group_name": &schema.Schema{
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "All Members of the of this group can access the filter",
 						},
 
 						"id": &schema.Schema{

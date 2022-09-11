@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/andygrunwald/go-jira v1.16.0
+	github.com/hashicorp/terraform-plugin-docs v0.13.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.22.0
 	github.com/pkg/errors v0.9.1
 	github.com/trivago/tgo v1.0.7
@@ -12,7 +13,6 @@ require (
 require (
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
-	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-hclog v1.3.0 // indirect
 	github.com/hashicorp/go-plugin v1.4.5 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
