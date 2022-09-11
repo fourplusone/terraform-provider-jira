@@ -2,6 +2,7 @@ package jira
 
 import (
 	"log"
+	"sync"
 
 	jira "github.com/andygrunwald/go-jira"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -10,6 +11,7 @@ import (
 
 type Config struct {
 	jiraClient *jira.Client
+	jiraLock   sync.Mutex
 }
 
 func (c *Config) createAndAuthenticateClient(d *schema.ResourceData) error {
