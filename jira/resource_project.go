@@ -165,6 +165,10 @@ func resourceProject() *schema.Resource {
 func resourceProjectCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
+	// Acquire lock to avoid race conditions within JIRA while the project is being created
+	config.jiraLock.Lock()
+	defer config.jiraLock.Unlock()
+
 	sharedProjectID, useSharedConfiguration := d.GetOk("shared_configuration_project_id")
 	if useSharedConfiguration {
 		project := &ProjectRequest{
