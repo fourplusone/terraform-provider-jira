@@ -31,6 +31,7 @@ func Provider() *schema.Provider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"jira_comment":            resourceComment(),
+			"jira_component":          resourceComponent(),
 			"jira_filter":             resourceFilter(),
 			"jira_group":              resourceGroup(),
 			"jira_group_membership":   resourceGroupMembership(),

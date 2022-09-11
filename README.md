@@ -12,6 +12,7 @@ Terraform Provider for managing JIRA. (__[View on registry.terraform.io](https:/
 ## Resources
 
 - Comments
+- Components
 - Filters & Filter Permissions
 - Groups
 - Group Memberships
@@ -119,6 +120,21 @@ resource "jira_issue" "example" {
 resource "jira_comment" "example_comment" {
   body = "Commented using terraform"
   issue_key = "${jira_issue.example.issue_key}"
+}
+
+resource "jira_component" "example_component" {
+  
+  name = "Sample Component"
+  project_key = "${jira_project.example.key}"
+  
+  // (optional) Description of the component
+  description = "Sample Description" 
+  
+  // (optional) Component lead
+  lead = "${jira_user.demo_user.name}"
+
+  // (optional) assignee type. Can be one of project_default, component_lead, project_lead or unassigned.
+	assignee_type = "component_lead"
 }
 
 resource "jira_issue" "another_example" {
