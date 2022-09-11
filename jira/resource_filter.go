@@ -8,8 +8,7 @@ import (
 
 	jira "github.com/andygrunwald/go-jira"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/pkg/errors"
 )
 
@@ -304,7 +303,7 @@ func resourceFilterPermissionsHash(v interface{}) int {
 		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
 	}
 
-	return hashcode.String(buf.String())
+	return HashString(buf.String())
 }
 
 func filterRevokePermissions(configured []interface{}, filterID string, config *Config) error {
