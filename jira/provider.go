@@ -17,16 +17,36 @@ func Provider() *schema.Provider {
 			},
 			"user": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("JIRA_USER", nil),
 				Description: "User to be used",
 			},
 			"password": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("JIRA_PASSWORD", nil),
 				Description: "Password/API Key of the user",
+			},
+			"pat_token": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+				DefaultFunc: schema.EnvDefaultFunc("JIRA_PAT_TOKEN", nil),
+				Description: "PAT token of the user",
+			},
+			"custom_auth_header_key": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("JIRA_CUSTOM_AUTH_HEADER_KEY", nil),
+				Description: "Set a custom header key",
+			},
+			"custom_auth_header_value": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+				DefaultFunc: schema.EnvDefaultFunc("JIRA_CUSTOM_AUTH_HEADER_VALUE", nil),
+				Description: "Set the value for the custom header",
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
