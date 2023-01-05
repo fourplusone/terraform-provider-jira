@@ -16,10 +16,13 @@ func resourceComment() *schema.Resource {
 		Update: resourceCommentUpdate,
 		Delete: resourceCommentDelete,
 
+		Description: "Creates a comment for an issue",
+
 		Schema: map[string]*schema.Schema{
 			"body": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The contents of the comment to be created",
 			},
 			"issue_key": &schema.Schema{
 				Type:     schema.TypeString,

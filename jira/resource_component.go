@@ -20,15 +20,19 @@ func resourceComponent() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 
+		Description: "Creates a project component",
+
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Name of the component",
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Description of the component",
 			},
 
 			"assignee_type": {
@@ -46,17 +50,20 @@ func resourceComponent() *schema.Resource {
 				DiffSuppressFunc: caseInsensitiveSuppressFunc,
 				Optional:         true,
 				Default:          "project_default",
+				Description:      "Default assignee type. Can be one of project_default, component_lead, project_lead or unassigned.",
 			},
 
 			"lead": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Component lead",
 			},
 
 			"project_key": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "Project Key (for example PRJ)",
 			},
 		},
 	}
