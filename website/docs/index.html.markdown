@@ -28,6 +28,7 @@ provider "jira" {
   url      = "https://myjira.atlassian.net" # Can also be set using the JIRA_URL environment variable
   user     = "xxxx"                         # Can also be set using the JIRA_USER environment variable
   password = "xxxx"                         # Can also be set using the JIRA_PASSWORD environment variable
+  token = "xxxx"                            # Can also be set using the JIRA_TOKEN environment variable
 }
 ```
 
@@ -35,6 +36,8 @@ provider "jira" {
 
 - **url** (String, Required) URL for your Jira instance. Can be specified with the JIRA_URL environment variable.
 
-- **user** (String, Required) Username for your user. Can be specified with the JIRA_USER environment variable.
+- **user** (String, Optional) Username for your user. Can be specified with the JIRA_USER environment variable.
 
-- **password** (String, Required) Password for the user, can also be an API Token. Can be specified with the JIRA_PASSWORD environment variable.
+- **password** (String, Optional) Password for the user, can also be an API Token. Can be specified with the JIRA_PASSWORD environment variable.
+
+- **token** (String, Optional) Password for the user, can also be an API Token. Can be specified with the JIRA_PASSWORD environment variable.
