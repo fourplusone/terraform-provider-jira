@@ -15,6 +15,10 @@ resource "jira_issue" "example" {
   state_transition = 31 
 }
 
+data "jira_field" "epic_link" {
+  name = "Epic Link"
+}
+
 resource "jira_issue" "custom_fields_example" {
   issue_type  = "Task"
   summary     = "Also Created using Terraform"

@@ -1,0 +1,41 @@
+---
+page_title: "Provider: JIRA"
+description: |-
+  Terraform Provider for managing JIRA.
+---
+
+# {{ .ProviderShortName | upper }} Provider
+
+Working in Operations engineering organizations infrastructure is often driven by tickets. 
+Why not track infrastructure using tickets but this time we will use code. 
+
+## Example Usage
+
+Set JIRA URL, Username and Password using environment variables
+
+```bash
+export JIRA_URL=http://localhost:8080
+export JIRA_USER=username
+export JIRA_PASSWORD=password
+```
+
+If you prefer Personal Access Tokens
+
+```bash
+export JIRA_URL=http://localhost:8080
+export JIRA_TOKEN=<Personal Access Token>
+```
+
+
+It's also possible to use an API-Token from JIRA cloud. In this case, set 
+
+```bash
+export JIRA_URL=https://yourinstance.atlassian.net
+export JIRA_USER=username@example.org
+export JIRA_PASSWORD=<API-Key>
+```
+
+{{ tffile "examples/provider/provider.tf" }}
+
+
+{{ .SchemaMarkdown | trimspace }}
