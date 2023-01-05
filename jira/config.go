@@ -2,6 +2,7 @@ package jira
 
 import (
 	"log"
+	"net/http"
 	"sync"
 
 	jira "github.com/andygrunwald/go-jira"
@@ -16,11 +17,25 @@ type Config struct {
 
 func (c *Config) createAndAuthenticateClient(d *schema.ResourceData) error {
 	log.Printf("[INFO] creating jira client using environment variables")
-	jiraClient, err := jira.NewClient(nil, d.Get("url").(string))
+
+	var httpClient *http.Client
+
+	token, ok := d.GetOk("token")
+	if ok {
+		transport := jira.BearerAuthTransport{Token: token.(string)}
+		httpClient = transport.Client()
+	} else {
+		transport := &jira.BasicAuthTransport{
+			Username: d.Get("user").(string),
+			Password: d.Get("password").(string),
+		}
+		httpClient = transport.Client()
+	}
+
+	jiraClient, err := jira.NewClient(httpClient, d.Get("url").(string))
 	if err != nil {
 		return errors.Wrap(err, "creating jira client failed")
 	}
-	jiraClient.Authentication.SetBasicAuth(d.Get("user").(string), d.Get("password").(string))
 
 	c.jiraClient = jiraClient
 
