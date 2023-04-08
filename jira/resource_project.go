@@ -28,6 +28,7 @@ type Project struct {
 	AvatarUrls      jira.AvatarUrls         `json:"avatarUrls,omitempty" structs:"avatarUrls,omitempty"`
 	ProjectCategory ProjectCategory         `json:"projectCategory,omitempty" structs:"projectCategory,omitempty"`
 	ProjectTypeKey  string                  `json:"projectTypeKey,omitempty" structs:"projectTypeKey,omitempty"`
+	Archived        bool                    `json:"archived,omitempty" structs:"archived,omitempty"`
 }
 
 // ProjectRequest The struct sent to the JIRA instance to create a new Project
@@ -157,6 +158,10 @@ func resourceProject() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"archived": &schema.Schema{
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -258,24 +263,27 @@ func resourceProjectRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("assignee_type", project.AssigneeType)
 	d.Set("category_id", project.ProjectCategory.ID)
 	d.Set("project_type_key", project.ProjectTypeKey)
+	d.Set("archived", project.Archived)
 
-	issuesecuritylevelscheme, err := GetJiraResourceID(config.jiraClient, fmt.Sprintf("%s/%s/issuesecuritylevelscheme", projectAPIEndpoint, d.Id()))
-	if err != nil {
-		return errors.Wrap(err, "getting issuesecuritylevelscheme failed")
-	}
-	d.Set("issue_security_scheme", issuesecuritylevelscheme)
+	if !project.Archived {
+		issuesecuritylevelscheme, err := GetJiraResourceID(config.jiraClient, fmt.Sprintf("%s/%s/issuesecuritylevelscheme", projectAPIEndpoint, d.Id()))
+		if err != nil {
+			return errors.Wrap(err, "getting issuesecuritylevelscheme failed")
+		}
+		d.Set("issue_security_scheme", issuesecuritylevelscheme)
 
-	notificationscheme, err := GetJiraResourceID(config.jiraClient, fmt.Sprintf("%s/%s/notificationscheme", projectAPIEndpoint, d.Id()))
-	if err != nil {
-		return errors.Wrap(err, "getting notificationscheme failed")
-	}
-	d.Set("notification_scheme", notificationscheme)
+		notificationscheme, err := GetJiraResourceID(config.jiraClient, fmt.Sprintf("%s/%s/notificationscheme", projectAPIEndpoint, d.Id()))
+		if err != nil {
+			return errors.Wrap(err, "getting notificationscheme failed")
+		}
+		d.Set("notification_scheme", notificationscheme)
 
-	permissionscheme, err := GetJiraResourceID(config.jiraClient, fmt.Sprintf("%s/%s/permissionscheme", projectAPIEndpoint, d.Id()))
-	if err != nil {
-		return errors.Wrap(err, "getting permissionscheme failed")
+		permissionscheme, err := GetJiraResourceID(config.jiraClient, fmt.Sprintf("%s/%s/permissionscheme", projectAPIEndpoint, d.Id()))
+		if err != nil {
+			return errors.Wrap(err, "getting permissionscheme failed")
+		}
+		d.Set("permission_scheme", permissionscheme)
 	}
-	d.Set("permission_scheme", permissionscheme)
 
 	return nil
 }
