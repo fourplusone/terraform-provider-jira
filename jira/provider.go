@@ -17,8 +17,6 @@ func Provider() *schema.Provider {
 			},
 			"user": {
 				Type:         schema.TypeString,
-				ExactlyOneOf: []string{"token"},
-				RequiredWith: []string{"password"},
 				Optional:     true,
 				DefaultFunc:  schema.EnvDefaultFunc("JIRA_USER", nil),
 				Description:  "Username for your user. Can be specified with the JIRA_USER environment variable.",
