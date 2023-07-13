@@ -267,6 +267,21 @@ data "jira_jql" "issues" {
   jql = "project = ${jira_project.project_a.key} ORDER BY key ASC"
 }
 
+
+resource "jira_custom_field" "L5" {
+  name = "My custom field"
+  type = "com.atlassian.jira.plugin.system.customfieldtypes:textfield"
+  searcher_key = "com.atlassian.jira.plugin.system.customfieldtypes:textsearcher"
+}
+
+
+resource "jira_issue_type_scheme" "scheme" {
+  name = "JIRA Task Force Scheme"
+  description = "The issue types for projects engaged in SFS program"
+  default_issue_type_id = jira_issue_type.task.id
+  issue_type_ids = [jira_issue_type.task.id]
+  project_ids = [jira_project.project_a.id]
+}
 ```
 
 Run `terraform init`

@@ -54,6 +54,8 @@ func Provider() *schema.Provider {
 			"jira_webhook":            resourceWebhook(),
 			"jira_role":               resourceRole(),
 			"jira_user":               resourceUser(),
+			"jira_custom_field":       resourceCustomField(),
+			"jira_issue_type_scheme":  resourceIssueTypeScheme(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"jira_field": resourceField(),
