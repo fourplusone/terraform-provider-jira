@@ -41,12 +41,18 @@ type ProjectRequest struct {
 	Lead                string `json:"lead,omitempty" structs:"lead,omitempty"`
 	LeadAccountID       string `json:"leadAccountId,omitempty" structs:"leadAccountId,omitempty"`
 	URL                 string `json:"url,omitempty" structs:"url,omitempty"`
+	Email               string `json:"email,omitempty" structs:"email,omitempty"`
 	AssigneeType        string `json:"assigneeType,omitempty" structs:"assigneeType,omitempty"`
 	AvatarID            int    `json:"avatar_id,omitempty" structs:"avatar_id,omitempty"`
 	IssueSecurityScheme int    `json:"issueSecurityScheme,omitempty" structs:"issueSecurityScheme,omitempty"`
 	PermissionScheme    int    `json:"permissionScheme,omitempty" structs:"permissionScheme,omitempty"`
 	NotificationScheme  int    `json:"notificationScheme,omitempty" structs:"notificationScheme,omitempty"`
 	CategoryID          string `json:"categoryId,omitempty" structs:"categoryId,omitempty"`
+}
+
+// ProjectRequest The struct sent to the JIRA instance to update project's sender email. The API only supports GET and UPDATE.
+type ProjectEmailSenderRequest struct {
+	EmailAddress string `json:"emailAddress,omitempty" structs:"emailAddress,omitempty"`
 }
 
 type SharedConfigurationProjectResponse struct {
@@ -162,6 +168,10 @@ func resourceProject() *schema.Resource {
 				Type:     schema.TypeBool,
 				Computed: true,
 			},
+			"email": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -227,6 +237,17 @@ func resourceProjectCreate(d *schema.ResourceData, m interface{}) error {
 		}
 
 		d.SetId(strconv.Itoa(returnedProject.ID))
+
+		email := &ProjectEmailSenderRequest{
+			EmailAddress: d.Get("email").(string),
+		}
+
+		urlStrEmail := fmt.Sprintf("%s/%s/%s", projectAPIEndpoint, d.Id(), "email")
+
+		err = request(config.jiraClient, "PUT", urlStrEmail, email, nil)
+		if err != nil {
+			return errors.Wrap(err, "Could not update email-sender")
+		}
 	}
 
 	return resourceProjectRead(d, m)
@@ -264,6 +285,7 @@ func resourceProjectRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("category_id", project.ProjectCategory.ID)
 	d.Set("project_type_key", project.ProjectTypeKey)
 	d.Set("archived", project.Archived)
+	d.Set("email", project.Email)
 
 	if !project.Archived {
 		issuesecuritylevelscheme, err := GetJiraResourceID(config.jiraClient, fmt.Sprintf("%s/%s/issuesecuritylevelscheme", projectAPIEndpoint, d.Id()))
@@ -308,6 +330,7 @@ func resourceProjectUpdate(d *schema.ResourceData, m interface{}) error {
 		NotificationScheme:  d.Get("notification_scheme").(int),
 		CategoryID:          d.Get("category_id").(string),
 	}
+
 	urlStr := fmt.Sprintf("%s/%s", projectAPIEndpoint, d.Id())
 
 	returnedProject := new(jira.Project)
@@ -323,6 +346,17 @@ func resourceProjectUpdate(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			return errors.Wrap(err, "Request failed")
 		}
+	}
+
+	email := &ProjectEmailSenderRequest{
+		EmailAddress: d.Get("email").(string),
+	}
+
+	urlStrEmail := fmt.Sprintf("%s/%s/%s", projectAPIEndpoint, d.Id(), "email")
+
+	err = request(config.jiraClient, "PUT", urlStrEmail, email, nil)
+	if err != nil {
+		return errors.Wrap(err, "Could not update email-sender")
 	}
 
 	return resourceProjectRead(d, m)
