@@ -3,7 +3,7 @@
 page_title: "jira_project Resource - terraform-provider-jira"
 subcategory: ""
 description: |-
-  
+
 ---
 
 # jira_project (Resource)
@@ -64,10 +64,9 @@ resource "jira_project" "project_shared" {
 - `project_type_key` (String)
 - `shared_configuration_project_id` (Number)
 - `url` (String)
+- `email` (String) The project's sender email. [Note that it must be setup by an admin](https://support.atlassian.com/organization-administration/docs/add-custom-email-addresses-for-product-notifications/). If the value is empty it will default to the tenant default.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
 - `project_id` (Number)
-
-
