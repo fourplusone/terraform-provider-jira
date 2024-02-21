@@ -105,9 +105,9 @@ func resourceGroupMembershipCreate(d *schema.ResourceData, m interface{}) error 
 func resourceGroupMembershipRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
-	components := strings.SplitN(d.Id(), ":", 2)
-	accountId := components[0]
-	groupname := components[1]
+	separatorIndex := strings.LastIndex(d.Id(), ":")
+	accountId := d.Id()[:separatorIndex]
+	groupname := d.Id()[separatorIndex+1:]
 
 	groups, _, err := getGroups(config.jiraClient, accountId)
 	if err != nil {
