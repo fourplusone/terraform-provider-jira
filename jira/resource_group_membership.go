@@ -12,7 +12,7 @@ import (
 
 // GroupMembership The struct sent to the JIRA instance to create a new GroupMembership
 type GroupMembership struct {
-	AccountId string `json:"name,omitempty" structs:"name,omitempty"`
+	AccountId string `json:"accountId,omitempty" structs:"accountId,omitempty"`
 }
 
 // Group
