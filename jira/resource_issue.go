@@ -59,6 +59,11 @@ func resourceIssue() *schema.Resource {
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
+            "component_ids": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 			"summary": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -103,6 +108,7 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 	issueType := d.Get("issue_type").(string)
 	description := d.Get("description").(string)
 	labels := d.Get("labels")
+	component_ids := d.Get("component_ids")
 	summary := d.Get("summary").(string)
 	projectKey := d.Get("project_key").(string)
 
@@ -143,6 +149,14 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 	if labels != nil {
 		for _, label := range labels.([]interface{}) {
 			i.Fields.Labels = append(i.Fields.Labels, fmt.Sprintf("%v", label))
+		}
+	}
+	if component_ids != nil {
+		for _, component_id := range component_ids.([]interface{}) {
+			i.Fields.Components = append(i.Fields.Components,
+			     &jira.Component{
+                    ID: component_id.(string),
+                })
 		}
 	}
 
@@ -225,6 +239,15 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 		d.Set("labels", issue.Fields.Labels)
 	}
 
+	d.Set("component_ids", nil)
+	if issue.Fields.Components != nil && len(issue.Fields.Components) > 0 {
+	    component_ids := make([]string, len(issue.Fields.Components))
+	    for i, component := range issue.Fields.Components {
+			component_ids[i] = component.ID
+		}
+		d.Set("component_ids", component_ids)
+	}
+
 	d.Set("issue_type", issue.Fields.Type.Name)
 	if issue.Fields.Description != "" {
 		d.Set("description", issue.Fields.Description)
@@ -246,6 +269,7 @@ func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 	description := d.Get("description").(string)
 	fields := d.Get("fields")
 	labels := d.Get("labels")
+	component_ids := d.Get("component_ids")
 	summary := d.Get("summary").(string)
 	projectKey := d.Get("project_key").(string)
 	issueKey := d.Get("issue_key").(string)
@@ -282,7 +306,14 @@ func resourceIssueUpdate(d *schema.ResourceData, m interface{}) error {
 			i.Fields.Labels = append(i.Fields.Labels, fmt.Sprintf("%v", label))
 		}
 	}
-
+	if component_ids != nil {
+		for _, component_id := range component_ids.([]interface{}) {
+			i.Fields.Components = append(i.Fields.Components,
+			     &jira.Component{
+                    ID: component_id.(string),
+                })
+		}
+	}
 	if fields != nil && len(fields.(map[string]interface{})) > 0 {
 		if i.Fields.Unknowns == nil {
 			i.Fields.Unknowns = tcontainer.NewMarshalMap()
