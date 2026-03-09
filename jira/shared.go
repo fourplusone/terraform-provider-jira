@@ -92,3 +92,12 @@ func request(client *jira.Client, method string, endpoint string, in interface{}
 func caseInsensitiveSuppressFunc(k, old, new string, d *schema.ResourceData) bool {
 	return strings.ToLower(old) == strings.ToLower(new)
 }
+
+// parseImportID splits an import ID of the form "part1/part2" into its two components.
+func parseImportID(id string) (string, string, error) {
+	parts := strings.SplitN(id, "/", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", fmt.Errorf("unexpected format of ID %q", id)
+	}
+	return parts[0], parts[1], nil
+}
